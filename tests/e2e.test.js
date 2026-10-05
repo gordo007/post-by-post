@@ -36,12 +36,15 @@ async function open(urlPath = '/r/test/') {
   return page;
 }
 
-// Wait until scrolling has stopped, then return scrollY.
+// Wait until scrollY has held still for three checks in a row (smooth
+// scrolling crawls through its last few pixels), then return it.
 async function settled(page) {
   let last = -1;
-  for (let i = 0; i < 40; i++) {
+  let still = 0;
+  for (let i = 0; i < 50; i++) {
     const y = await page.evaluate(() => scrollY);
-    if (y === last) return y;
+    still = y === last ? still + 1 : 0;
+    if (still === 2) return y;
     last = y;
     await page.waitForTimeout(100);
   }
@@ -199,5 +202,64 @@ test('clicking inside the page does not snap', async () => {
   await page.mouse.click(500, 400);
   await page.waitForTimeout(400);
   assert.equal(await settled(page), 500);
+  await page.close();
+});
+
+test('Space / Page Down go to the next post, Shift+Space / Page Up to the previous', async () => {
+  const page = await open();
+  await page.keyboard.press('Space');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.keyboard.press('PageDown');
+  assert.equal(await topOf(page, 'p1'), LINE);
+  await page.keyboard.press('Shift+Space');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.keyboard.press('PageDown');
+  await page.keyboard.press('PageUp');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.close();
+});
+
+test('page keys page through a tall post, then snap to the next one', async () => {
+  const page = await open();
+  for (const _ of [0, 1, 2]) await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p2'), LINE);
+  await page.keyboard.press('PageDown');
+  const top = await topOf(page, 'p2');
+  assert.ok(top < LINE - 300, `expected a normal page-down inside post 2, top is ${top}`);
+  // Keep paging until post 3 arrives; it must arrive exactly at the snap line.
+  let presses = 1;
+  while ((await topOf(page, 'p3')) > LINE && presses < 8) {
+    await page.keyboard.press('PageDown');
+    presses++;
+  }
+  assert.equal(await topOf(page, 'p3'), LINE);
+  assert.ok(presses >= 3, `post 2 should take several pages to read, took ${presses}`);
+  await page.close();
+});
+
+test('Space on a focused button presses the button instead of scrolling', async () => {
+  const page = await open();
+  await page.focus('#btn');
+  await page.keyboard.press('Space');
+  assert.equal(await page.getAttribute('#btn', 'data-clicks'), '1');
+  await page.close();
+});
+
+test('a snap still lands exactly when the layout shifts mid-scroll', async () => {
+  const page = await open();
+  await page.keyboard.press('j'); // to post 0
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.keyboard.press('j'); // start scrolling to post 1...
+  await page.evaluate(() => { document.getElementById('p0').style.height = '420px'; }); // ...an image loads above it
+  assert.equal(await topOf(page, 'p1'), LINE);
+  await page.close();
+});
+
+test('J then K in quick succession lands exactly', async () => {
+  const page = await open();
+  await page.keyboard.press('j');
+  await page.keyboard.press('j');
+  await page.keyboard.press('k');
+  assert.equal(await topOf(page, 'p0'), LINE);
   await page.close();
 });

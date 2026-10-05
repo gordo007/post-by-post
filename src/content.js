@@ -24,9 +24,11 @@
   const EDGE = 2; // px tolerance when comparing positions
   const WHEEL_THRESHOLD = 40; // px of wheel travel before a gesture snaps
   const GESTURE_IDLE_MS = 160; // wheel silence that ends one gesture (trackpad inertia)
-  const SNAP_TIMEOUT_MS = 1000; // fallback for browsers that miss 'scrollend'
+  const SNAP_TIMEOUT_MS = 1500; // fallback for browsers that miss 'scrollend'
   const SCROLLBAR_IDLE_MS = 150; // stillness after releasing the scrollbar before snapping
   const KEYS = { j: 1, ArrowDown: 1, k: -1, ArrowUp: -1 };
+  const PAGE_KEYS = { ' ': 1, PageDown: 1, PageUp: -1 }; // Shift+Space goes up
+  const SPACE_CONTROLS = 'button, summary, video, audio, [role="button"], [role="checkbox"], [role="switch"]';
 
   const settings = { enabled: true };
   try {
@@ -74,9 +76,16 @@
   let snapTarget = null; // post being scrolled to; lets rapid presses chain correctly
   let snapTimer = 0;
 
+  // When a snap finishes, nudge the post exactly into place. A snap can land a
+  // little off if it was redirected mid-scroll, or if images above it loaded
+  // and changed the layout while it was moving.
   function endSnap() {
+    const target = snapTarget;
     snapTarget = null;
     clearTimeout(snapTimer);
+    if (!target?.isConnected) return;
+    const off = target.getBoundingClientRect().top - snapLine();
+    if (Math.abs(off) > 1) scrollBy({ top: off, behavior: 'auto' });
   }
   addEventListener('scrollend', endSnap);
 
@@ -237,10 +246,28 @@
     );
   }
 
+  // Space presses a focused button, checkbox or media player; leave that alone.
+  function isSpaceControl(e) {
+    const el = e.composedPath()[0];
+    return el instanceof Element && !!el.closest(SPACE_CONTROLS);
+  }
+
+  // Direction for a key we handle, or 0.
+  function keyDirection(e) {
+    if (e.key in PAGE_KEYS) {
+      if (e.key === ' ' && isSpaceControl(e)) return 0;
+      return e.key === ' ' && e.shiftKey ? -1 : PAGE_KEYS[e.key];
+    }
+    if (e.shiftKey) return 0;
+    return KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key] ?? 0;
+  }
+
   function onKeyDown(e) {
-    if (!isActive() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-    const dir = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
-    if (!dir || isTyping(e)) return;
+    if (!isActive() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTyping(e)) return;
+    const dir = keyDirection(e);
+    if (!dir) return;
+    // Page keys page through a post taller than the screen, like the wheel does.
+    if (e.key in PAGE_KEYS && !snapTarget && readingTallPost(dir)) return;
     if (step(dir)) {
       e.preventDefault();
       e.stopPropagation(); // keep Reddit's own shortcuts from also acting on the key

@@ -11,7 +11,12 @@ between two half-visible posts.
   Trackpad momentum is absorbed, so you don't skip several posts at once.
 - **Header offset:** posts line up just below Reddit's sticky top bar.
 - **Keyboard:** `J` / `↓` for the next post, `K` / `↑` for the previous one.
-  Quick repeated presses step through posts one after another.
+  `Space` / `Page Down` and `Shift+Space` / `Page Up` also move a post at a
+  time (inside a very long post they page through it first). Quick repeated
+  presses step through posts one after another. Space still presses a
+  focused button.
+- **Precise landing:** if an image loads mid-scroll and shifts the layout,
+  the post is nudged exactly into place when the scroll ends.
 - **Scrollbar:** click the scrollbar track or drag its thumb, and when you
   let go the page settles on the nearest post.
 - **Tall posts:** if a post is taller than the screen, the wheel scrolls
