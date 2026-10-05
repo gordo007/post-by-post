@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fake Reddit feed</title>
+<style>
+  body { margin: 0; font-family: sans-serif; }
+  header { position: sticky; top: 0; height: 56px; background: #333; color: #fff; z-index: 10; }
+  main { padding: 120px 0 3000px; width: 600px; margin: 0 auto; }
+  shreddit-post { display: block; margin: 12px 0; background: #eee; }
+  #scroller { height: 100px; overflow-y: auto; }
+</style>
+</head>
+<body>
+  <header>Reddit</header>
+  <main>
+    <shreddit-post id="p0" style="height: 300px">Post 0 <textarea id="box"></textarea></shreddit-post>
+    <shreddit-post id="p1" style="height: 450px">Post 1</shreddit-post>
+    <shreddit-post id="p2" style="height: 2400px">Post 2 (taller than the screen)</shreddit-post>
+    <shreddit-post id="p3" style="height: 350px">Post 3
+      <div id="scroller"><div style="height: 600px">inner scroll area</div></div>
+    </shreddit-post>
+    <shreddit-post id="p4" style="height: 300px">Post 4</shreddit-post>
+  </main>
+</body>
+</html>

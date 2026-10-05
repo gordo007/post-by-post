@@ -1,0 +1,13 @@
+{
+  "name": "post-by-post",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser extension that snaps Reddit scrolling to one post at a time.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "zip": "rm -f post-by-post.zip && zip -r post-by-post.zip manifest.json src icons"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

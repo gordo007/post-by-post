@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Post-by-Post for Reddit",
+  "version": "0.1.0",
+  "description": "Scroll Reddit one post at a time. Every scroll or J/K press lands exactly on the next post.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.reddit.com/*", "https://reddit.com/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "post-by-post@extension",
+      "strict_min_version": "121.0"
+    }
+  }
+}

@@ -1,0 +1,151 @@
+// End-to-end tests: load the unpacked extension into Chromium and serve a fake
+// Reddit feed at reddit.com URLs, so the content script runs exactly as in production.
+// Run with: npm test
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { chromium } = require('playwright');
+
+const ROOT = path.resolve(__dirname, '..');
+const FEED = fs.readFileSync(path.join(__dirname, 'fixtures', 'feed.html'), 'utf8');
+const LINE = 56 + 8; // fixture header height + GAP in content.js
+
+let context;
+
+test.before(async () => {
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbp-'));
+  context = await chromium.launchPersistentContext(userDataDir, {
+    channel: 'chromium', // full Chromium; the headless shell can't load extensions
+    viewport: { width: 1000, height: 800 },
+    args: [`--disable-extensions-except=${ROOT}`, `--load-extension=${ROOT}`],
+  });
+  await context.route('https://www.reddit.com/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: FEED }),
+  );
+});
+
+test.after(() => context?.close());
+
+async function open(urlPath = '/r/test/') {
+  const page = await context.newPage();
+  await page.goto(`https://www.reddit.com${urlPath}`);
+  await page.waitForTimeout(300); // let the content script attach
+  return page;
+}
+
+// Wait until scrolling has stopped, then return scrollY.
+async function settled(page) {
+  let last = -1;
+  for (let i = 0; i < 40; i++) {
+    const y = await page.evaluate(() => scrollY);
+    if (y === last) return y;
+    last = y;
+    await page.waitForTimeout(100);
+  }
+  return last;
+}
+
+async function topOf(page, id) {
+  await settled(page);
+  return page.evaluate((id) => Math.round(document.getElementById(id).getBoundingClientRect().top), id);
+}
+
+test('J / K and arrow keys move one post at a time, below the header', async () => {
+  const page = await open();
+  await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p1'), LINE);
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await topOf(page, 'p2'), LINE);
+  await page.keyboard.press('k');
+  assert.equal(await topOf(page, 'p1'), LINE);
+  await page.keyboard.press('ArrowUp');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.close();
+});
+
+test('rapid key presses chain instead of repeating the same post', async () => {
+  const page = await open();
+  await page.keyboard.press('j');
+  await page.keyboard.press('j');
+  await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p2'), LINE);
+  await page.close();
+});
+
+test('keys typed into a text box do not navigate', async () => {
+  const page = await open();
+  await page.click('#box');
+  await page.keyboard.type('jjkk');
+  assert.equal(await settled(page), 0);
+  assert.equal(await page.inputValue('#box'), 'jjkk');
+  await page.close();
+});
+
+test('one wheel gesture snaps exactly one post, even with many events', async () => {
+  const page = await open();
+  await page.mouse.move(500, 400);
+  for (let i = 0; i < 8; i++) await page.mouse.wheel(0, 30); // a trackpad-style burst
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.waitForTimeout(250); // pause ends the gesture
+  await page.mouse.wheel(0, 100);
+  assert.equal(await topOf(page, 'p1'), LINE);
+  await page.waitForTimeout(250);
+  await page.mouse.wheel(0, -100);
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.close();
+});
+
+test('posts taller than the screen scroll normally until their end', async () => {
+  const page = await open();
+  for (const _ of [0, 1, 2]) await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p2'), LINE);
+  const before = await settled(page);
+  await page.mouse.move(500, 400);
+  await page.mouse.wheel(0, 100);
+  const after = await settled(page);
+  assert.ok(after > before && after - before < 200, `expected a small native scroll, got ${after - before}px`);
+  assert.ok((await topOf(page, 'p2')) < LINE, 'still reading post 2');
+  await page.close();
+});
+
+test('wheel over an inner scroll area scrolls that area, not the feed', async () => {
+  const page = await open();
+  for (const _ of [0, 1, 2, 3]) await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p3'), LINE);
+  const before = await settled(page);
+  const box = await page.locator('#scroller').boundingBox();
+  await page.mouse.move(box.x + 10, box.y + 10);
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(300);
+  assert.equal(await settled(page), before);
+  assert.ok((await page.locator('#scroller').evaluate((el) => el.scrollTop)) > 0);
+  await page.close();
+});
+
+test('past the last post the wheel scrolls normally (so Reddit can load more)', async () => {
+  const page = await open();
+  for (const _ of [0, 1, 2, 3, 4]) await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p4'), LINE);
+  const before = await settled(page);
+  await page.mouse.move(500, 400);
+  await page.mouse.wheel(0, 100);
+  assert.ok((await settled(page)) > before);
+  await page.close();
+});
+
+test('works on home, popular, search; stays off on post pages', async () => {
+  for (const p of ['/', '/r/popular/', '/search/?q=cats', '/r/test/top/']) {
+    const page = await open(p);
+    await page.keyboard.press('j');
+    assert.equal(await topOf(page, 'p0'), LINE, `snapping on ${p}`);
+    await page.close();
+  }
+  const page = await open('/r/test/comments/abc123/some_post/');
+  await page.keyboard.press('j');
+  assert.equal(await settled(page), 0);
+  await page.close();
+});
