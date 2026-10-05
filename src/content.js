@@ -26,6 +26,7 @@
   const GESTURE_IDLE_MS = 160; // wheel silence that ends one gesture (trackpad inertia)
   const SNAP_TIMEOUT_MS = 1500; // fallback for browsers that miss 'scrollend'
   const SCROLLBAR_IDLE_MS = 150; // stillness after releasing the scrollbar before snapping
+  const SCROLLBAR_NUDGE = 0.25; // scrollbar moves under this share of the screen are fine adjustments
   const PAGE_KEYS = { ' ': 1, PageDown: 1, PageUp: -1 }; // Shift+Space goes up
   const SPACE_CONTROLS = 'button, summary, video, audio, [role="button"], [role="checkbox"], [role="switch"]';
 
@@ -202,13 +203,24 @@
   // --- Scrollbar ---------------------------------------------------------------
   // Clicking or dragging the page scrollbar fires no wheel or key events, so we
   // wait until the user lets go and the page stops moving, then snap to the nearest post.
+  // Small adjustments are left alone: clicks on the scrollbar's arrow buttons,
+  // and any scrollbar move shorter than a quarter of the screen (e.g. nudging
+  // down to see a post's votes and comments).
 
   let scrollbar = 'idle'; // 'idle' | 'held' | 'released'
   let scrollbarTimer = 0;
+  let scrollbarStartY = 0;
 
   function onPageScrollbar(e) {
     // The page scrollbar sits outside <html>'s client area.
     return e.clientX >= document.documentElement.clientWidth || e.clientY >= document.documentElement.clientHeight;
+  }
+
+  // The ▲/▼ buttons at the ends of a classic scrollbar are about as tall as it is wide.
+  function onScrollbarArrow(e) {
+    const width = innerWidth - document.documentElement.clientWidth;
+    if (width <= 0 || e.clientX < document.documentElement.clientWidth) return false;
+    return e.clientY <= width || e.clientY >= document.documentElement.clientHeight - width;
   }
 
   function snapWhenScrollStops() {
@@ -216,14 +228,16 @@
     scrollbarTimer = setTimeout(() => {
       if (scrollbar !== 'released') return;
       scrollbar = 'idle';
-      snapNearest();
+      if (Math.abs(scrollY - scrollbarStartY) >= innerHeight * SCROLLBAR_NUDGE) snapNearest();
     }, SCROLLBAR_IDLE_MS);
   }
 
   addEventListener(
     'mousedown',
     (e) => {
-      scrollbar = e.button === 0 && isActive() && onPageScrollbar(e) ? 'held' : 'idle';
+      const track = e.button === 0 && isActive() && onPageScrollbar(e) && !onScrollbarArrow(e);
+      scrollbar = track ? 'held' : 'idle';
+      scrollbarStartY = scrollY;
     },
     { capture: true },
   );

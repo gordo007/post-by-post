@@ -218,3 +218,45 @@ test('J then K in quick succession lands exactly', async () => {
   assert.equal(await topOf(page, 'p0'), LINE);
   await page.close();
 });
+
+test('clicking the scrollbar arrow buttons makes small adjustments without snapping back', async () => {
+  const page = await open();
+  const x = await scrollbarX(page);
+  await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  const start = await settled(page);
+  const bottom = await page.evaluate(() => document.documentElement.clientHeight);
+  for (let i = 0; i < 3; i++) {
+    await page.mouse.click(x, bottom - 5); // the ▼ button
+    await page.waitForTimeout(150);
+  }
+  await page.waitForTimeout(600); // well past the snap delay
+  const down = await settled(page);
+  assert.ok(down > start, `the arrow should scroll down (from ${start} to ${down})`);
+  assert.ok((await topOf(page, 'p0')) < LINE, 'still nudged down, not pulled back to the post top');
+
+  await page.mouse.click(x, 5); // the ▲ button
+  await page.waitForTimeout(600);
+  const up = await settled(page);
+  assert.ok(up < down && up > start - 1, `the ▲ button nudges back up (${down} → ${up})`);
+  await page.close();
+});
+
+test('a small drag of the scrollbar thumb is left alone', async () => {
+  const page = await open();
+  const x = await scrollbarX(page);
+  await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  const thumbY = await page.evaluate(() => {
+    const ratio = scrollY / document.documentElement.scrollHeight;
+    return Math.round(17 + ratio * (document.documentElement.clientHeight - 34)) + 10;
+  });
+  await page.mouse.move(x, thumbY);
+  await page.mouse.down();
+  await page.mouse.move(x, thumbY + 6, { steps: 3 });
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+  const top = await topOf(page, 'p0');
+  assert.ok(top < LINE && top > LINE - 200, `expected a small nudge to stay put, post 0 top is ${top}`);
+  await page.close();
+});
