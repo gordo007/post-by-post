@@ -276,4 +276,13 @@
 
   addEventListener('wheel', onWheel, { passive: false, capture: true });
   addEventListener('keydown', onKeyDown, { capture: true });
+
+  // One line in the DevTools console, to confirm which version is running and what it sees.
+  setTimeout(() => {
+    const version = chrome.runtime?.getManifest?.().version ?? '?';
+    console.info(
+      `[Post-by-Post ${version}] active on this page: ${isActive()}, posts found: ${getPosts().length}, ` +
+        `snap line: ${Math.round(snapLine())}px`,
+    );
+  }, 2000);
 })();
