@@ -26,16 +26,20 @@
   const GESTURE_IDLE_MS = 160; // wheel silence that ends one gesture (trackpad inertia)
   const SNAP_TIMEOUT_MS = 1500; // fallback for browsers that miss 'scrollend'
   const SCROLLBAR_IDLE_MS = 150; // stillness after releasing the scrollbar before snapping
-  const KEYS = { j: 1, ArrowDown: 1, k: -1, ArrowUp: -1 };
   const PAGE_KEYS = { ' ': 1, PageDown: 1, PageUp: -1 }; // Shift+Space goes up
   const SPACE_CONTROLS = 'button, summary, video, audio, [role="button"], [role="checkbox"], [role="switch"]';
 
-  const settings = { enabled: true };
-  try {
-    chrome.storage.sync.get(settings, (stored) => Object.assign(settings, stored));
-    chrome.storage.onChanged.addListener((changes) => {
-      if (changes.enabled) settings.enabled = changes.enabled.newValue;
+  // Settings come from src/settings.js (PBP), loaded before this file.
+  let settings = PBP.effective(PBP.DEFAULTS);
+  function reloadSettings() {
+    PBP.load().then((stored) => {
+      settings = PBP.effective(stored);
+      scheduleAutoScroll();
     });
+  }
+  try {
+    reloadSettings();
+    chrome.storage.onChanged.addListener(reloadSettings);
   } catch {
     // Storage unavailable (e.g. extension reloaded under the page): keep defaults.
   }
@@ -237,7 +241,10 @@
   // --- Keyboard ---------------------------------------------------------------
 
   function isTyping(e) {
-    const el = e.composedPath()[0];
+    return isTextField(e.composedPath()[0]);
+  }
+
+  function isTextField(el) {
     if (!(el instanceof Element)) return false;
     return (
       el.isContentEditable ||
@@ -259,7 +266,10 @@
       return e.key === ' ' && e.shiftKey ? -1 : PAGE_KEYS[e.key];
     }
     if (e.shiftKey) return 0;
-    return KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key] ?? 0;
+    const key = PBP.normalizeKey(e.key);
+    if (settings.nextKeys.includes(key)) return 1;
+    if (settings.prevKeys.includes(key)) return -1;
+    return 0;
   }
 
   function onKeyDown(e) {
@@ -276,6 +286,36 @@
 
   addEventListener('wheel', onWheel, { passive: false, capture: true });
   addEventListener('keydown', onKeyDown, { capture: true });
+
+  // --- Auto-scroll (Pro) --------------------------------------------------------
+  // Every N seconds, move to the next post. Any wheel, key or click restarts the
+  // countdown, so it never moves the page while the user is doing something.
+  // It also waits while the tab is hidden or a text box has focus.
+
+  let autoTimer = 0;
+
+  function scheduleAutoScroll() {
+    clearTimeout(autoTimer);
+    if (settings.autoScroll) autoTimer = setTimeout(autoScrollTick, settings.autoScrollSeconds * 1000);
+  }
+
+  function deepActiveElement() {
+    let el = document.activeElement;
+    while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+    return el;
+  }
+
+  function autoScrollTick() {
+    if (isActive() && !document.hidden && !isTextField(deepActiveElement()) && !step(1)) {
+      // End of the loaded feed: scroll a little so Reddit loads more posts.
+      scrollBy({ top: innerHeight / 2, behavior: 'smooth' });
+    }
+    scheduleAutoScroll();
+  }
+
+  for (const type of ['wheel', 'keydown', 'mousedown', 'touchstart']) {
+    addEventListener(type, scheduleAutoScroll, { capture: true, passive: true });
+  }
 
   // One line in the DevTools console, to confirm which version is running and what it sees.
   setTimeout(() => {

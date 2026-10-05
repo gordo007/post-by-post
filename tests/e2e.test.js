@@ -1,60 +1,15 @@
-// End-to-end tests: load the unpacked extension into Chromium and serve a fake
-// Reddit feed at reddit.com URLs, so the content script runs exactly as in production.
-// Run with: npm test
+// End-to-end tests for snapping (free features). Run with: npm test
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { chromium } = require('playwright');
-
-const ROOT = path.resolve(__dirname, '..');
-const FEED = fs.readFileSync(path.join(__dirname, 'fixtures', 'feed.html'), 'utf8');
-const LINE = 56 + 8; // fixture header height + GAP in content.js
+const { LINE, launch, open: openIn, settled, topOf } = require('./helpers');
 
 let context;
-
 test.before(async () => {
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbp-'));
-  context = await chromium.launchPersistentContext(userDataDir, {
-    channel: 'chromium', // full Chromium; the headless shell can't load extensions
-    ignoreDefaultArgs: ['--hide-scrollbars'], // real scrollbars, for the scrollbar tests
-    viewport: { width: 1000, height: 800 },
-    args: [`--disable-extensions-except=${ROOT}`, `--load-extension=${ROOT}`],
-  });
-  await context.route('https://www.reddit.com/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: FEED }),
-  );
+  context = await launch();
 });
-
 test.after(() => context?.close());
 
-async function open(urlPath = '/r/test/') {
-  const page = await context.newPage();
-  await page.goto(`https://www.reddit.com${urlPath}`);
-  await page.waitForTimeout(300); // let the content script attach
-  return page;
-}
-
-// Wait until scrollY has held still for three checks in a row (smooth
-// scrolling crawls through its last few pixels), then return it.
-async function settled(page) {
-  let last = -1;
-  let still = 0;
-  for (let i = 0; i < 50; i++) {
-    const y = await page.evaluate(() => scrollY);
-    still = y === last ? still + 1 : 0;
-    if (still === 2) return y;
-    last = y;
-    await page.waitForTimeout(100);
-  }
-  return last;
-}
-
-async function topOf(page, id) {
-  await settled(page);
-  return page.evaluate((id) => Math.round(document.getElementById(id).getBoundingClientRect().top), id);
-}
+const open = (urlPath) => openIn(context, urlPath);
 
 test('J / K and arrow keys move one post at a time, below the header', async () => {
   const page = await open();

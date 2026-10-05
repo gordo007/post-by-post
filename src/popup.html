@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Post-by-Post</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon48.png" alt="" width="24" height="24">
+    <h1>Post-by-Post</h1>
+    <span id="plan" class="plan">Free</span>
+  </header>
+
+  <section>
+    <label class="row">
+      <span>
+        <strong>Snap to posts</strong>
+        <small>Turn snapping on or off</small>
+      </span>
+      <input type="checkbox" id="enabled" class="switch" data-pro>
+    </label>
+  </section>
+
+  <section>
+    <label class="row">
+      <span>
+        <strong>Auto-scroll</strong>
+        <small>Move to the next post on a timer</small>
+      </span>
+      <input type="checkbox" id="autoScroll" class="switch" data-pro>
+    </label>
+    <label class="row sub">
+      <span>Every</span>
+      <span><input type="number" id="seconds" min="3" max="120" step="1" data-pro> seconds</span>
+    </label>
+  </section>
+
+  <section>
+    <div class="row head">
+      <strong>Hotkeys</strong>
+      <button type="button" id="resetKeys" class="link" data-pro>Reset</button>
+    </div>
+    <div class="row sub">
+      <span>Next post</span>
+      <span>
+        <button type="button" class="key" data-dir="nextKeys" data-slot="0" data-pro></button>
+        <button type="button" class="key" data-dir="nextKeys" data-slot="1" data-pro></button>
+      </span>
+    </div>
+    <div class="row sub">
+      <span>Previous post</span>
+      <span>
+        <button type="button" class="key" data-dir="prevKeys" data-slot="0" data-pro></button>
+        <button type="button" class="key" data-dir="prevKeys" data-slot="1" data-pro></button>
+      </span>
+    </div>
+    <p id="keyHint" class="hint" hidden>Press a key… (Esc to cancel)</p>
+    <p class="hint">Space and Page Up/Down always move one post.</p>
+  </section>
+
+  <section id="upsell" class="upsell">
+    <strong>Unlock Pro</strong>
+    <small>On/off switch, auto-scroll and custom hotkeys.</small>
+    <button type="button" id="upgrade" disabled>Payments coming soon</button>
+  </section>
+
+  <label id="devRow" class="row dev" hidden>
+    <span>
+      <strong>Developer: unlock Pro</strong>
+      <small>Only shown for unpacked test installs</small>
+    </span>
+    <input type="checkbox" id="devPro">
+  </label>
+
+  <script src="settings.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

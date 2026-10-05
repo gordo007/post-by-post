@@ -29,6 +29,25 @@ between two half-visible posts.
 - **Active on** Home, Popular/All, subreddit feeds (with any sort), and
   Search. It stays off on post detail pages and everywhere else.
 
+## Pro features (v0.3, in testing)
+
+Click the Post-by-Post icon in the browser toolbar to open the menu.
+
+- **On/off switch:** pause snapping without uninstalling.
+- **Auto-scroll:** move to the next post every 3–120 seconds. Any wheel,
+  key or click restarts the countdown, and it waits while you type or the
+  tab is in the background.
+- **Custom hotkeys:** click a key button, then press the key you want (Esc
+  cancels). Each direction has two slots. Space, Page Up/Down, Tab, Enter
+  and similar keys can't be assigned, as they already have jobs.
+
+On the free plan these controls are locked and the defaults apply.
+**Payments aren't connected yet.** The Pro check lives in one function,
+`isPro()` in `src/settings.js`, where a payment method's license check will
+go. Until then, unpacked (developer) installs show a **Developer: unlock
+Pro** switch at the bottom of the menu for testing. Store installs never
+see it.
+
 ## Install for testing
 
 **Chrome / Edge / Brave**
@@ -58,6 +77,4 @@ markup and snapping stops working, update those selectors.
 
 ## Roadmap
 
-- **Step 3 (Pro):** custom hotkeys, auto-scroll mode, on/off toggle in a
-  popup, and payments through ExtensionPay. The content script already reads
-  an `enabled` setting from `chrome.storage.sync`, ready for the toggle.
+- Connect a payment method to `isPro()` (Stripe and PayPal excluded).
