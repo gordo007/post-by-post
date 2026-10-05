@@ -18,7 +18,9 @@ between two half-visible posts.
 - **Precise landing:** if an image loads mid-scroll and shifts the layout,
   the post is nudged exactly into place when the scroll ends.
 - **Scrollbar:** click the scrollbar track or drag its thumb, and when you
-  let go the page settles on the nearest post.
+  let go the page settles on the nearest post. The ▲/▼ arrow buttons and
+  small nudges (under a quarter of the screen) are left alone, so you can
+  fine-tune, e.g. to see a post's votes and comments.
 - **Tall posts:** if a post is taller than the screen, the wheel scrolls
   normally until you reach its end, then snaps to the next post.
 - **Leaves other scrolling alone:** typing in comment or search boxes,
