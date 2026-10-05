@@ -37,8 +37,10 @@ between two half-visible posts.
 3. Click **Load unpacked** and select this folder.
 
 **Firefox** (121 or later)
-1. Open `about:debugging#/runtime/this-firefox`.
-2. Click **Load Temporary Add-on** and select `manifest.json`.
+1. Run `npm run build` (Firefox needs an add-on ID that only the Firefox
+   build adds; the root `manifest.json` stays Chrome-clean).
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on** and select `dist/firefox/manifest.json`.
 
 Then open reddit.com and scroll.
 
@@ -47,7 +49,7 @@ Then open reddit.com and scroll.
 ```bash
 npm install
 npm test        # loads the extension into Chromium against a fake Reddit feed
-npm run zip     # builds post-by-post.zip for store upload
+npm run build   # builds Chrome and Firefox store zips into dist/
 ```
 
 The code that finds Reddit's posts and header is at the top of
