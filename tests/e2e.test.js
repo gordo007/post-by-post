@@ -18,6 +18,7 @@ test.before(async () => {
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbp-'));
   context = await chromium.launchPersistentContext(userDataDir, {
     channel: 'chromium', // full Chromium; the headless shell can't load extensions
+    ignoreDefaultArgs: ['--hide-scrollbars'], // real scrollbars, for the scrollbar tests
     viewport: { width: 1000, height: 800 },
     args: [`--disable-extensions-except=${ROOT}`, `--load-extension=${ROOT}`],
   });
@@ -147,5 +148,56 @@ test('works on home, popular, search; stays off on post pages', async () => {
   const page = await open('/r/test/comments/abc123/some_post/');
   await page.keyboard.press('j');
   assert.equal(await settled(page), 0);
+  await page.close();
+});
+
+// Viewport x of the page scrollbar, or null if this browser draws overlay scrollbars.
+async function scrollbarX(page) {
+  const { client, inner } = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    inner: innerWidth,
+  }));
+  return inner > client ? Math.round((client + inner) / 2) : null;
+}
+
+test('clicking the scrollbar track snaps to the nearest post', async () => {
+  const page = await open();
+  const x = await scrollbarX(page);
+  assert.ok(x, 'expected a classic scrollbar in the test browser');
+  await page.keyboard.press('j');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.mouse.click(x, 700); // page down via the track
+  await page.waitForTimeout(300);
+  await settled(page);
+  const tops = await page.evaluate(() =>
+    [...document.querySelectorAll('shreddit-post')].map((p) => Math.round(p.getBoundingClientRect().top)),
+  );
+  assert.ok(tops.includes(LINE), `a post should sit at the snap line, got tops ${tops}`);
+  await page.close();
+});
+
+test('dragging the scrollbar thumb snaps on release', async () => {
+  const page = await open();
+  const x = await scrollbarX(page);
+  await page.mouse.move(x, 20);
+  await page.mouse.down();
+  await page.mouse.move(x, 70, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  await settled(page);
+  const tops = await page.evaluate(() =>
+    [...document.querySelectorAll('shreddit-post')].map((p) => Math.round(p.getBoundingClientRect().top)),
+  );
+  assert.ok((await page.evaluate(() => scrollY)) > 0, 'the drag should have scrolled');
+  assert.ok(tops.includes(LINE), `a post should sit at the snap line, got tops ${tops}`);
+  await page.close();
+});
+
+test('clicking inside the page does not snap', async () => {
+  const page = await open();
+  await page.evaluate(() => scrollTo(0, 500)); // deliberately between posts
+  await page.mouse.click(500, 400);
+  await page.waitForTimeout(400);
+  assert.equal(await settled(page), 500);
   await page.close();
 });

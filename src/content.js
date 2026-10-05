@@ -25,6 +25,7 @@
   const WHEEL_THRESHOLD = 40; // px of wheel travel before a gesture snaps
   const GESTURE_IDLE_MS = 160; // wheel silence that ends one gesture (trackpad inertia)
   const SNAP_TIMEOUT_MS = 1000; // fallback for browsers that miss 'scrollend'
+  const SCROLLBAR_IDLE_MS = 150; // stillness after releasing the scrollbar before snapping
   const KEYS = { j: 1, ArrowDown: 1, k: -1, ArrowUp: -1 };
 
   const settings = { enabled: true };
@@ -94,14 +95,33 @@
       target = posts.findLast((p) => p.getBoundingClientRect().top < line - EDGE);
     }
     if (!target) return false;
+    snapTo(target, line);
+    return true;
+  }
 
+  function snapTo(target, line) {
     const top = scrollY + target.getBoundingClientRect().top - line;
     const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
     snapTarget = target;
     clearTimeout(snapTimer);
     snapTimer = setTimeout(endSnap, SNAP_TIMEOUT_MS);
     scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' });
-    return true;
+  }
+
+  // Snap to whichever post's top is closest to the snap line. Used after the
+  // user scrolls some other way (e.g. the scrollbar) and leaves a post cut off.
+  function snapNearest() {
+    if (!isActive()) return;
+    const line = snapLine();
+    let best;
+    let bestDist = Infinity;
+    for (const p of getPosts()) {
+      const dist = Math.abs(p.getBoundingClientRect().top - line);
+      if (dist < bestDist) [best, bestDist] = [p, dist];
+    }
+    // Already aligned, or in the middle of a tall post with no edge nearby: leave it.
+    if (!best || bestDist <= EDGE || bestDist > innerHeight / 2) return;
+    snapTo(best, line);
   }
 
   // True while the user is partway through a post taller than the screen, so
@@ -165,6 +185,45 @@
       e.preventDefault();
     }
   }
+
+  // --- Scrollbar ---------------------------------------------------------------
+  // Clicking or dragging the page scrollbar fires no wheel or key events, so we
+  // wait until the user lets go and the page stops moving, then snap to the nearest post.
+
+  let scrollbar = 'idle'; // 'idle' | 'held' | 'released'
+  let scrollbarTimer = 0;
+
+  function onPageScrollbar(e) {
+    // The page scrollbar sits outside <html>'s client area.
+    return e.clientX >= document.documentElement.clientWidth || e.clientY >= document.documentElement.clientHeight;
+  }
+
+  function snapWhenScrollStops() {
+    clearTimeout(scrollbarTimer);
+    scrollbarTimer = setTimeout(() => {
+      if (scrollbar !== 'released') return;
+      scrollbar = 'idle';
+      snapNearest();
+    }, SCROLLBAR_IDLE_MS);
+  }
+
+  addEventListener(
+    'mousedown',
+    (e) => {
+      scrollbar = e.button === 0 && isActive() && onPageScrollbar(e) ? 'held' : 'idle';
+    },
+    { capture: true },
+  );
+  addEventListener(
+    'mouseup',
+    () => {
+      if (scrollbar !== 'held') return;
+      scrollbar = 'released';
+      snapWhenScrollStops();
+    },
+    { capture: true },
+  );
+  addEventListener('scroll', () => scrollbar === 'released' && snapWhenScrollStops(), { passive: true });
 
   // --- Keyboard ---------------------------------------------------------------
 

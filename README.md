@@ -12,6 +12,8 @@ between two half-visible posts.
 - **Header offset:** posts line up just below Reddit's sticky top bar.
 - **Keyboard:** `J` / `↓` for the next post, `K` / `↑` for the previous one.
   Quick repeated presses step through posts one after another.
+- **Scrollbar:** click the scrollbar track or drag its thumb, and when you
+  let go the page settles on the nearest post.
 - **Tall posts:** if a post is taller than the screen, the wheel scrolls
   normally until you reach its end, then snaps to the next post.
 - **Leaves other scrolling alone:** typing in comment or search boxes,
