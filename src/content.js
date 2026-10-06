@@ -288,6 +288,13 @@
 
   function onKeyDown(e) {
     if (!isActive() || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTyping(e)) return;
+    // While auto-scroll is on, Space pauses and resumes it instead of moving.
+    if (settings.autoScroll && e.key === ' ' && !e.shiftKey && !isSpaceControl(e)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!e.repeat) setAutoPaused(!autoPaused);
+      return;
+    }
     const dir = keyDirection(e);
     if (!dir) return;
     // Page keys page through a post taller than the screen, like the wheel does.
@@ -305,12 +312,52 @@
   // Every N seconds, move to the next post. Any wheel, key or click restarts the
   // countdown, so it never moves the page while the user is doing something.
   // It also waits while the tab is hidden or a text box has focus.
+  // Space pauses and resumes it (per tab); a label shows while it's paused.
 
   let autoTimer = 0;
+  let autoPaused = false;
 
   function scheduleAutoScroll() {
     clearTimeout(autoTimer);
-    if (settings.autoScroll) autoTimer = setTimeout(autoScrollTick, settings.autoScrollSeconds * 1000);
+    if (!settings.autoScroll) setAutoPaused(false, { quiet: true });
+    if (settings.autoScroll && !autoPaused) {
+      autoTimer = setTimeout(autoScrollTick, settings.autoScrollSeconds * 1000);
+    }
+  }
+
+  function setAutoPaused(paused, { quiet = false } = {}) {
+    if (paused === autoPaused) return;
+    autoPaused = paused;
+    if (!quiet) showStatus(paused ? 'Auto-scroll paused · Space to resume' : 'Auto-scroll resumed', paused);
+    else hideStatus();
+    scheduleAutoScroll();
+  }
+
+  // A small label at the bottom of the page. In a shadow root so Reddit's
+  // styles can't change it.
+  let statusHost = null;
+  let statusTimer = 0;
+
+  function showStatus(text, sticky) {
+    if (!statusHost) {
+      statusHost = document.createElement('post-by-post-status');
+      const root = statusHost.attachShadow({ mode: 'open' });
+      root.innerHTML = `<style>
+        div { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2147483647;
+          padding: 8px 16px; border-radius: 999px; background: rgba(26, 26, 27, 0.92); color: #fff;
+          font: 600 14px/1.3 system-ui, sans-serif; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+          pointer-events: none; }
+      </style><div role="status"></div>`;
+    }
+    statusHost.shadowRoot.querySelector('div').textContent = text;
+    document.documentElement.append(statusHost);
+    clearTimeout(statusTimer);
+    if (!sticky) statusTimer = setTimeout(hideStatus, 1500);
+  }
+
+  function hideStatus() {
+    clearTimeout(statusTimer);
+    statusHost?.remove();
   }
 
   function deepActiveElement() {

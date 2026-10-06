@@ -38,7 +38,8 @@ Click the Post-by-Post icon in the browser toolbar to open the menu.
 - **On/off switch:** pause snapping without uninstalling.
 - **Auto-scroll:** move to the next post every 3–120 seconds. Any wheel,
   key or click restarts the countdown, and it waits while you type or the
-  tab is in the background.
+  tab is in the background. While it's on, **Space pauses and resumes it**
+  (a label shows while paused); with it off, Space moves one post as usual.
 - **Custom hotkeys:** click a key button, then press the key you want (Esc
   cancels). Each direction has two slots. Space, Page Up/Down, Tab, Enter
   and similar keys can't be assigned, as they already have jobs.
