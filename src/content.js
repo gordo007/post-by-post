@@ -362,9 +362,13 @@
       font: 600 14px/1.3 system-ui, sans-serif; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); display: none; }
     .label.show { display: block; }
   `;
+  // Pinned with !important so no page style can hide or move the overlay
+  // (older browsers without popovers rely on this alone).
   const HOST_STYLE = {
-    position: 'fixed', inset: '0', width: '100%', height: '100%', margin: '0', padding: '0', border: '0',
-    background: 'transparent', overflow: 'visible', 'pointer-events': 'none', 'z-index': '2147483647',
+    display: 'block', position: 'fixed', inset: '0', top: '0', left: '0', width: '100%', height: '100%',
+    margin: '0', padding: '0', border: '0', background: 'transparent', overflow: 'visible',
+    'pointer-events': 'none', 'z-index': '2147483647', visibility: 'visible', opacity: '1',
+    transform: 'none', filter: 'none', 'clip-path': 'none', contain: 'none', isolation: 'isolate',
   };
 
   let overlay = null;
@@ -394,7 +398,8 @@
 
   function showStatus(text, paused) {
     const { host, icon, label } = getOverlay();
-    if (!host.isConnected) (document.body ?? document.documentElement).append(host);
+    // Attached to <html>, outside <body>, so body styles can't affect it.
+    if (!host.isConnected || host.parentNode !== document.documentElement) document.documentElement.append(host);
     if ('popover' in host && !host.matches(':popover-open')) host.showPopover();
 
     icon.replaceChildren(...(paused ? [div('bar'), div('bar')] : [div('play')]));
@@ -406,6 +411,31 @@
     label.classList.add('show');
     clearTimeout(labelTimer);
     if (!paused) labelTimer = setTimeout(hideStatus, 1500);
+    if (paused) setTimeout(reportOverlay, 300);
+  }
+
+  // Diagnostics: where the pause label is and what (if anything) covers it.
+  function reportOverlay() {
+    if (!overlay) return;
+    const { host, label } = overlay;
+    const h = getComputedStyle(host);
+    const l = getComputedStyle(label);
+    const r = label.getBoundingClientRect();
+    const describe = (el) => {
+      if (!el) return 'nothing';
+      const cs = getComputedStyle(el);
+      return `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}` +
+        `${typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}` +
+        ` (position ${cs.position}, z-index ${cs.zIndex})`;
+    };
+    const covering = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    log(
+      `overlay check: attached ${host.isConnected} to ${host.parentNode?.nodeName}, ` +
+        `host display ${h.display} visibility ${h.visibility} opacity ${h.opacity} z ${h.zIndex} ` +
+        `size ${host.offsetWidth}x${host.offsetHeight}; label display ${l.display} at ` +
+        `${Math.round(r.x)},${Math.round(r.y)} size ${Math.round(r.width)}x${Math.round(r.height)}; ` +
+        `window ${innerWidth}x${innerHeight}; topmost element there: ${describe(covering)}`,
+    );
   }
 
   function hideStatus() {
