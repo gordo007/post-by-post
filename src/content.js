@@ -292,8 +292,14 @@
     if (settings.autoScroll && e.key === ' ' && !e.shiftKey && !isSpaceControl(e)) {
       e.preventDefault();
       e.stopPropagation();
-      if (!e.repeat) setAutoPaused(!autoPaused);
+      if (!e.repeat) {
+        setAutoPaused(!autoPaused);
+        log(`Space: auto-scroll ${autoPaused ? 'paused' : 'resumed'}`);
+      }
       return;
+    }
+    if (settings.autoScroll && e.key === ' ') {
+      log('Space: left to the page (a button, player or other control has focus)', e.composedPath()[0]);
     }
     const dir = keyDirection(e);
     if (!dir) return;
@@ -328,8 +334,13 @@
   function setAutoPaused(paused, { quiet = false } = {}) {
     if (paused === autoPaused) return;
     autoPaused = paused;
-    if (!quiet) showStatus(paused ? 'Auto-scroll paused · Space to resume' : 'Auto-scroll resumed', paused);
-    else hideStatus();
+    try {
+      if (!quiet) showStatus(paused ? 'Auto-scroll paused · Space to resume' : 'Auto-scroll resumed', paused);
+      else hideStatus();
+    } catch (err) {
+      // Never let the on-screen indicator break pausing itself.
+      console.error('[Post-by-Post] could not show the pause indicator:', err);
+    }
     scheduleAutoScroll();
   }
 
@@ -425,12 +436,18 @@
     addEventListener(type, scheduleAutoScroll, { capture: true, passive: true });
   }
 
-  // One line in the DevTools console, to confirm which version is running and what it sees.
+  // Diagnostics in the DevTools console (filter by "Post-by-Post").
+  function log(...args) {
+    console.info('[Post-by-Post]', ...args);
+  }
+
   setTimeout(() => {
     const version = chrome.runtime?.getManifest?.().version ?? '?';
-    console.info(
-      `[Post-by-Post ${version}] active on this page: ${isActive()}, posts found: ${getPosts().length}, ` +
-        `snap line: ${Math.round(snapLine())}px`,
+    const browser = navigator.userAgent.match(/(Chrome|Firefox|Edg)\/[\d.]+/g)?.join(' ') ?? navigator.userAgent;
+    log(
+      `${version} on ${browser}. Active on this page: ${isActive()}, posts found: ${getPosts().length}, ` +
+        `snap line: ${Math.round(snapLine())}px, auto-scroll: ${settings.autoScroll}, ` +
+        `top-layer overlay supported: ${'popover' in HTMLElement.prototype}`,
     );
   }, 2000);
 })();
