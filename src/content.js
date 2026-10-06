@@ -292,14 +292,8 @@
     if (settings.autoScroll && e.key === ' ' && !e.shiftKey && !isSpaceControl(e)) {
       e.preventDefault();
       e.stopPropagation();
-      if (!e.repeat) {
-        setAutoPaused(!autoPaused);
-        log(`Space: auto-scroll ${autoPaused ? 'paused' : 'resumed'}`);
-      }
+      if (!e.repeat) setAutoPaused(!autoPaused);
       return;
-    }
-    if (settings.autoScroll && e.key === ' ') {
-      log('Space: left to the page (a button, player or other control has focus)', e.composedPath()[0]);
     }
     const dir = keyDirection(e);
     if (!dir) return;
@@ -411,31 +405,6 @@
     label.classList.add('show');
     clearTimeout(labelTimer);
     if (!paused) labelTimer = setTimeout(hideStatus, 1500);
-    if (paused) setTimeout(reportOverlay, 300);
-  }
-
-  // Diagnostics: where the pause label is and what (if anything) covers it.
-  function reportOverlay() {
-    if (!overlay) return;
-    const { host, label } = overlay;
-    const h = getComputedStyle(host);
-    const l = getComputedStyle(label);
-    const r = label.getBoundingClientRect();
-    const describe = (el) => {
-      if (!el) return 'nothing';
-      const cs = getComputedStyle(el);
-      return `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}` +
-        `${typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}` +
-        ` (position ${cs.position}, z-index ${cs.zIndex})`;
-    };
-    const covering = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-    log(
-      `overlay check: attached ${host.isConnected} to ${host.parentNode?.nodeName}, ` +
-        `host display ${h.display} visibility ${h.visibility} opacity ${h.opacity} z ${h.zIndex} ` +
-        `size ${host.offsetWidth}x${host.offsetHeight}; label display ${l.display} at ` +
-        `${Math.round(r.x)},${Math.round(r.y)} size ${Math.round(r.width)}x${Math.round(r.height)}; ` +
-        `window ${innerWidth}x${innerHeight}; topmost element there: ${describe(covering)}`,
-    );
   }
 
   function hideStatus() {
