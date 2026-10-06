@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Post-by-Post for Reddit",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Scroll Reddit one post at a time. Every scroll or J/K press lands exactly on the next post.",
   "icons": {
     "16": "icons/icon16.png",

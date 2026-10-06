@@ -25,6 +25,15 @@ async function unlockPro(popup) {
   await popup.waitForSelector('body.pro');
 }
 
+// Text of the on-page pause label if it's showing, else null.
+function overlayLabel(page) {
+  return page.evaluate(() => {
+    const host = document.querySelector('post-by-post-overlay');
+    if (!host?.isConnected || !host.matches(':popover-open')) return null;
+    return host.shadowRoot.querySelector('.label.show')?.textContent ?? null;
+  });
+}
+
 async function setKey(popup, dir, slot, key) {
   await popup.click(`.key[data-dir="${dir}"][data-slot="${slot}"]`);
   await popup.keyboard.press(key);
@@ -169,8 +178,7 @@ test('Space pauses auto-scroll and Space again resumes it', async () => {
   await popup.check('#autoScroll');
 
   const page = await open();
-  const status = () =>
-    page.evaluate(() => document.querySelector('post-by-post-status')?.shadowRoot.textContent.trim() ?? null);
+  const status = () => overlayLabel(page);
 
   await page.keyboard.press('Space');
   assert.match(await status(), /paused/, 'a paused label shows');
@@ -209,12 +217,45 @@ test('turning auto-scroll off clears a pause', async () => {
   await popup.uncheck('#autoScroll');
   await page.waitForTimeout(300);
   assert.equal(
-    await page.evaluate(() => !!document.querySelector('post-by-post-status')),
-    false,
+    await overlayLabel(page),
+    null,
     'the paused label goes away',
   );
   await page.keyboard.press('Space'); // a normal Space again
   assert.equal(await topOf(page, 'p0'), LINE);
+  await page.close();
+  await popup.close();
+});
+
+test('the pause icon and label show even when the page tries to cover them', async () => {
+  const popup = await freshPopup();
+  await unlockPro(popup);
+  await popup.fill('#seconds', '3');
+  await popup.locator('#seconds').blur();
+  await popup.check('#autoScroll');
+
+  const page = await open();
+  await page.addStyleTag({
+    content: `body { transform: translateZ(0); }
+      #cover { position: fixed; inset: 0; z-index: 2147483647; background: rgba(255, 0, 0, 0.2); }`,
+  });
+  await page.evaluate(() => document.body.append(Object.assign(document.createElement('div'), { id: 'cover' })));
+  await page.keyboard.press('Space');
+  assert.match(await overlayLabel(page), /paused/);
+  const icon = await page.evaluate(() => {
+    const el = document.querySelector('post-by-post-overlay').shadowRoot.querySelector('.icon');
+    const r = el.getBoundingClientRect();
+    const { clientWidth, clientHeight } = document.documentElement;
+    return {
+      shown: el.classList.contains('show'),
+      dx: r.x + r.width / 2 - clientWidth / 2,
+      dy: r.y + r.height / 2 - clientHeight / 2,
+      bars: el.children.length,
+    };
+  });
+  assert.equal(icon.shown, true);
+  assert.equal(icon.bars, 2, 'pause icon has two bars');
+  assert.ok(Math.abs(icon.dx) < 2 && Math.abs(icon.dy) < 2, `icon centred on screen, off by ${icon.dx},${icon.dy}`);
   await page.close();
   await popup.close();
 });

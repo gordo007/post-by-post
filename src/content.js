@@ -333,31 +333,78 @@
     scheduleAutoScroll();
   }
 
-  // A small label at the bottom of the page. In a shadow root so Reddit's
-  // styles can't change it.
-  let statusHost = null;
-  let statusTimer = 0;
+  // Pause/resume feedback: a YouTube-style icon that flashes in the middle of
+  // the screen, plus a label at the bottom that stays while paused. It's shown
+  // in the browser's top layer (a popover), above everything on the page, so
+  // nothing on Reddit can cover or clip it. In a shadow root so Reddit's
+  // styles can't change it, and built without innerHTML.
+  const OVERLAY_CSS = `
+    .icon { position: fixed; left: 50%; top: 50%; width: 96px; height: 96px; margin: -48px 0 0 -48px;
+      border-radius: 50%; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center;
+      justify-content: center; opacity: 0; transform: scale(0.85); transition: opacity 0.25s, transform 0.25s; }
+    .icon.show { opacity: 1; transform: scale(1); }
+    .bar { width: 11px; height: 38px; margin: 0 6px; border-radius: 2px; background: #fff; }
+    .play { width: 0; height: 0; margin-left: 10px; border-left: 34px solid #fff;
+      border-top: 21px solid transparent; border-bottom: 21px solid transparent; }
+    .label { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); white-space: nowrap;
+      padding: 8px 16px; border-radius: 999px; background: rgba(26, 26, 27, 0.92); color: #fff;
+      font: 600 14px/1.3 system-ui, sans-serif; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); display: none; }
+    .label.show { display: block; }
+  `;
+  const HOST_STYLE = {
+    position: 'fixed', inset: '0', width: '100%', height: '100%', margin: '0', padding: '0', border: '0',
+    background: 'transparent', overflow: 'visible', 'pointer-events': 'none', 'z-index': '2147483647',
+  };
 
-  function showStatus(text, sticky) {
-    if (!statusHost) {
-      statusHost = document.createElement('post-by-post-status');
-      const root = statusHost.attachShadow({ mode: 'open' });
-      root.innerHTML = `<style>
-        div { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2147483647;
-          padding: 8px 16px; border-radius: 999px; background: rgba(26, 26, 27, 0.92); color: #fff;
-          font: 600 14px/1.3 system-ui, sans-serif; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-          pointer-events: none; }
-      </style><div role="status"></div>`;
-    }
-    statusHost.shadowRoot.querySelector('div').textContent = text;
-    document.documentElement.append(statusHost);
-    clearTimeout(statusTimer);
-    if (!sticky) statusTimer = setTimeout(hideStatus, 1500);
+  let overlay = null;
+  let flashTimer = 0;
+  let labelTimer = 0;
+
+  function div(className) {
+    const el = document.createElement('div');
+    el.className = className;
+    return el;
+  }
+
+  function getOverlay() {
+    if (overlay) return overlay;
+    const host = document.createElement('post-by-post-overlay');
+    for (const [prop, value] of Object.entries(HOST_STYLE)) host.style.setProperty(prop, value, 'important');
+    if ('popover' in host) host.popover = 'manual';
+    const style = document.createElement('style');
+    style.textContent = OVERLAY_CSS;
+    const icon = div('icon');
+    const label = div('label');
+    label.setAttribute('role', 'status');
+    host.attachShadow({ mode: 'open' }).append(style, icon, label);
+    overlay = { host, icon, label };
+    return overlay;
+  }
+
+  function showStatus(text, paused) {
+    const { host, icon, label } = getOverlay();
+    if (!host.isConnected) (document.body ?? document.documentElement).append(host);
+    if ('popover' in host && !host.matches(':popover-open')) host.showPopover();
+
+    icon.replaceChildren(...(paused ? [div('bar'), div('bar')] : [div('play')]));
+    icon.classList.add('show');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => icon.classList.remove('show'), 800);
+
+    label.textContent = text;
+    label.classList.add('show');
+    clearTimeout(labelTimer);
+    if (!paused) labelTimer = setTimeout(hideStatus, 1500);
   }
 
   function hideStatus() {
-    clearTimeout(statusTimer);
-    statusHost?.remove();
+    clearTimeout(flashTimer);
+    clearTimeout(labelTimer);
+    if (!overlay) return;
+    overlay.icon.classList.remove('show');
+    overlay.label.classList.remove('show');
+    if ('popover' in overlay.host && overlay.host.matches(':popover-open')) overlay.host.hidePopover();
+    overlay.host.remove();
   }
 
   function deepActiveElement() {
