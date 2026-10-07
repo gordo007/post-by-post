@@ -82,3 +82,9 @@ header.top .brand { white-space: nowrap; }
 .steps { text-align: left; max-width: 520px; margin: 24px auto 0; }
 .steps ol { padding-left: 20px; margin: 8px 0 12px; }
 .steps p { color: var(--muted); }
+.key-row { display: flex; gap: 8px; align-items: center; margin: 8px 0 18px; }
+.key-row code {
+  flex: 1; min-width: 0; overflow-wrap: anywhere; padding: 10px 12px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--line); font: 600 14px ui-monospace, monospace;
+}
+.steps h3 { margin-top: 4px; }

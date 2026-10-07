@@ -8,9 +8,9 @@ Post-by-Post is a browser extension that changes how Reddit feeds scroll. It is 
 
 **What it stores:** your Post-by-Post settings (snapping on/off, auto-scroll timer, hotkeys) are saved with your browser's built-in extension storage. If you use browser sync, your browser may sync them between your own devices. They are never sent to us.
 
-**Where it runs:** only on reddit.com pages, where it adjusts scrolling. It reads the page only to find where posts begin and end.
+**Where it runs:** on reddit.com pages, where it adjusts scrolling and reads the page only to find where posts begin and end; and on postbypost.app, where it receives your license key after checkout.
 
-**Payments:** if you buy Pro, the purchase is handled by our reseller Paddle.com, the Merchant of Record, under its own privacy policy. We never see your card details. To unlock Pro, the email you enter is sent to postbypost.app, which asks Paddle whether it has a Pro purchase; it isn't stored on our servers, only in your browser, and is re-checked about weekly so refunds are reflected.
+**Payments:** if you buy Pro, the purchase is handled by our reseller Paddle.com, the Merchant of Record, under its own privacy policy. We never see your card details. To unlock Pro, your license key (your Paddle order number) is sent to postbypost.app, which asks Paddle whether it is a paid, unrefunded Pro purchase. No personal details are involved and nothing is stored on our servers; the key is kept in your browser and re-checked about weekly so refunds are reflected.
 
 **Changes:** if this policy changes, the new version will be published here with a new date.
 

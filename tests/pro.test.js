@@ -260,7 +260,11 @@ test('the pause icon and label show even when the page tries to cover them', asy
   await popup.close();
 });
 
-// --- Unlocking with a purchase email (the postbypost.app API is simulated) ---
+// --- Unlocking with a license key (the postbypost.app API is simulated) ---
+
+const fs = require('node:fs');
+const path = require('node:path');
+const KEY = 'txn_01h8xyzabcdefghijklmnopqrs';
 
 async function fakeApi(handler) {
   await context.unroute('https://postbypost.app/api/verify');
@@ -276,19 +280,19 @@ test('free plan shows the Buy button linking to the website', async () => {
   await popup.close();
 });
 
-test('entering a purchase email unlocks Pro', async () => {
+test('pasting a license key unlocks Pro', async () => {
   let sent;
   await fakeApi((route) => {
     sent = JSON.parse(route.request().postData());
     return answer({ pro: true })(route);
   });
   const popup = await freshPopup();
-  await popup.fill('#email', 'buyer@example.com');
+  await popup.fill('#licenseKey', `  ${KEY.toUpperCase()} `);
   await popup.click('#unlock');
   await popup.waitForSelector('body.pro');
-  assert.deepEqual(sent, { email: 'buyer@example.com' });
+  assert.deepEqual(sent, { key: KEY }, 'key is trimmed and lower-cased');
   assert.equal(await popup.textContent('#plan'), 'Pro');
-  assert.match(await popup.textContent('#licensed'), /buyer@example\.com/);
+  assert.equal(await popup.isVisible('#licensed'), true);
   assert.equal(await popup.isVisible('#upsell'), false);
 
   // and Pro features work on Reddit: custom keys apply
@@ -300,20 +304,20 @@ test('entering a purchase email unlocks Pro', async () => {
   await popup.close();
 });
 
-test('an email without a purchase stays on the free plan with a helpful message', async () => {
+test('an unrecognised key stays on the free plan with a helpful message', async () => {
   await fakeApi(answer({ pro: false }));
   const popup = await freshPopup();
-  await popup.fill('#email', 'someone@example.com');
+  await popup.fill('#licenseKey', 'txn_01h8xyzabcdefghijklmnozzz');
   await popup.click('#unlock');
-  await popup.waitForFunction(() => document.getElementById('restoreStatus').textContent.includes("couldn't find"));
+  await popup.waitForFunction(() => document.getElementById('restoreStatus').textContent.includes("wasn't recognised"));
   assert.equal(await popup.textContent('#plan'), 'Free');
   await popup.close();
 });
 
-test('a server error says so instead of claiming there is no purchase', async () => {
+test('a server error says so instead of claiming the key is wrong', async () => {
   await fakeApi(answer({ error: 'upstream_error' }, 502));
   const popup = await freshPopup();
-  await popup.fill('#email', 'buyer@example.com');
+  await popup.fill('#licenseKey', KEY);
   await popup.click('#unlock');
   await popup.waitForFunction(() => document.getElementById('restoreStatus').textContent.includes("Couldn't reach"));
   assert.equal(await popup.textContent('#plan'), 'Free');
@@ -321,10 +325,10 @@ test('a server error says so instead of claiming there is no purchase', async ()
 });
 
 test('a weekly re-check removes Pro after a refund, but keeps it when offline', async () => {
-  const stale = { email: 'buyer@example.com', checkedAt: Date.now() - 8 * 24 * 3600 * 1000 };
+  const stale = { key: KEY, checkedAt: Date.now() - 8 * 24 * 3600 * 1000 };
 
   await fakeApi((route) => route.abort()); // offline
-  let popup = await freshPopup();
+  const popup = await freshPopup();
   await popup.evaluate((license) => new Promise((r) => chrome.storage.sync.set({ license }, r)), stale);
   await popup.reload();
   await popup.waitForTimeout(500);
@@ -335,4 +339,42 @@ test('a weekly re-check removes Pro after a refund, but keeps it when offline', 
   await popup.waitForSelector('body:not(.pro)');
   assert.equal(await popup.textContent('#plan'), 'Free', 'refunded: back to Free');
   await popup.close();
+});
+
+test('after checkout, the buy page unlocks Pro automatically (retrying while the order settles)', async () => {
+  const site = path.join(__dirname, '..', 'site');
+  await context.route('https://postbypost.app/buy', (route) =>
+    route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(site, 'buy.html'), 'utf8') }),
+  );
+  await context.route('https://postbypost.app/style.css', (route) =>
+    route.fulfill({ contentType: 'text/css', body: fs.readFileSync(path.join(site, 'style.css'), 'utf8') }),
+  );
+  // Stand-in for Paddle.js: the test fires "checkout completed" itself.
+  await context.route('https://cdn.paddle.com/**', (route) =>
+    route.fulfill({
+      contentType: 'application/javascript',
+      body: `window.Paddle = { Environment: { set() {} }, Checkout: { open() {}, close() {} },
+               Initialize(o) { window.__paddleEvents = o.eventCallback; } };`,
+    }),
+  );
+  let checks = 0;
+  await fakeApi((route) => answer({ pro: ++checks > 1 })(route)); // first check: order not settled yet
+
+  const popup = await freshPopup();
+  await popup.close();
+  const page = await context.newPage();
+  await page.goto('https://postbypost.app/buy');
+  await page.waitForFunction(() => document.documentElement.dataset.postByPost); // extension present
+  await page.evaluate((key) => window.__paddleEvents({ name: 'checkout.completed', data: { transaction_id: key } }), KEY);
+
+  assert.equal(await page.textContent('#license-key'), KEY, 'the key is shown to keep');
+  await page.waitForFunction(() => document.getElementById('auto-status').textContent.includes('now unlocked'), null, {
+    timeout: 10000,
+  });
+  assert.equal(checks, 2, 'retried once after the first "not yet"');
+
+  const after = await openPopup(context);
+  assert.equal(await after.textContent('#plan'), 'Pro');
+  await after.close();
+  await page.close();
 });

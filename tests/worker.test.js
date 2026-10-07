@@ -1,9 +1,10 @@
-// Unit tests for worker/index.mjs (the postbypost.app purchase check), with
+// Unit tests for worker/index.mjs (the postbypost.app license check), with
 // Paddle's API mocked. Run with: npm test
 const { test, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 
 const PRICE = 'pri_pro';
+const KEY = 'txn_01h8xyzabcdefghijklmnopqrs';
 const ENV = {
   PADDLE_ENV: 'sandbox',
   PRO_PRICE_ID: PRICE,
@@ -12,7 +13,7 @@ const ENV = {
 };
 
 let worker;
-let paddle; // path -> data array the fake Paddle API returns
+let paddle; // path -> { status, data } the fake Paddle API returns
 let calls;
 const realFetch = globalThis.fetch;
 
@@ -23,9 +24,10 @@ beforeEach(async () => {
   globalThis.fetch = async (url, init) => {
     calls.push({ url: String(url), auth: init?.headers?.Authorization });
     const { pathname, search } = new URL(url);
-    const key = pathname + search;
     if (paddle.fail) return new Response('{}', { status: 500 });
-    return Response.json({ data: paddle[key] ?? [] });
+    const hit = paddle[pathname + search];
+    if (!hit) return new Response('{"error":{"code":"not_found"}}', { status: 404 });
+    return Response.json({ data: hit });
   };
 });
 afterEach(() => {
@@ -38,45 +40,50 @@ function verify(body, env = ENV, method = 'POST') {
   return worker.fetch(new Request('https://postbypost.app/api/verify', init), env);
 }
 
-function buyer({ price = PRICE, refunded = false } = {}) {
-  paddle['/customers?email=buyer%40example.com'] = [{ id: 'ctm_1' }];
-  paddle['/transactions?customer_id=ctm_1&status=completed&per_page=50'] = [
-    { id: 'txn_1', items: [{ price: { id: price } }] },
-  ];
-  paddle['/adjustments?transaction_id=txn_1&action=refund&status=approved'] = refunded ? [{ id: 'adj_1' }] : [];
+function purchase({ status = 'completed', price = PRICE, refunded = false } = {}) {
+  paddle[`/transactions/${KEY}`] = { id: KEY, status, items: [{ price: { id: price } }] };
+  paddle[`/adjustments?transaction_id=${KEY}&action=refund&status=approved`] = refunded ? [{ id: 'adj_1' }] : [];
 }
 
-test('a completed purchase of Pro unlocks', async () => {
-  buyer();
-  const res = await verify({ email: '  Buyer@Example.com ' });
+const pro = async (body, env) => (await (await verify(body, env)).json()).pro;
+
+test('a completed Pro purchase unlocks', async () => {
+  purchase();
+  const res = await verify({ key: `  ${KEY.toUpperCase()} ` });
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { pro: true });
   assert.ok(calls.every((c) => c.url.startsWith('https://sandbox-api.paddle.com/')));
   assert.ok(calls.every((c) => c.auth === 'Bearer pdl_test_key'));
 });
 
-test('a refunded purchase does not unlock', async () => {
-  buyer({ refunded: true });
-  assert.deepEqual(await (await verify({ email: 'buyer@example.com' })).json(), { pro: false });
+test('a purchase that is paid but not yet completed unlocks', async () => {
+  purchase({ status: 'paid' });
+  assert.equal(await pro({ key: KEY }), true);
 });
 
-test('a purchase of some other price does not unlock', async () => {
-  buyer({ price: 'pri_other' });
-  assert.deepEqual(await (await verify({ email: 'buyer@example.com' })).json(), { pro: false });
+test('unpaid, refunded, or other-product transactions do not unlock', async () => {
+  purchase({ status: 'ready' });
+  assert.equal(await pro({ key: KEY }), false);
+  purchase({ refunded: true });
+  assert.equal(await pro({ key: KEY }), false);
+  purchase({ price: 'pri_other' });
+  assert.equal(await pro({ key: KEY }), false);
 });
 
-test('an unknown email does not unlock', async () => {
-  assert.deepEqual(await (await verify({ email: 'nobody@example.com' })).json(), { pro: false });
+test('an unknown key does not unlock', async () => {
+  assert.equal(await pro({ key: 'txn_01h8xyzabcdefghijklmnozzz' }), false);
 });
 
 test('production mode calls the live Paddle API', async () => {
-  buyer();
-  await verify({ email: 'buyer@example.com' }, { ...ENV, PADDLE_ENV: 'production' });
-  assert.ok(calls.every((c) => c.url.startsWith('https://api.paddle.com/')));
+  purchase();
+  await verify({ key: KEY }, { ...ENV, PADDLE_ENV: 'production' });
+  assert.ok(calls.length > 0 && calls.every((c) => c.url.startsWith('https://api.paddle.com/')));
 });
 
-test('bad input is rejected without calling Paddle', async () => {
-  assert.equal((await verify({ email: 'not-an-email' })).status, 400);
+test('malformed keys and requests are rejected without calling Paddle', async () => {
+  for (const key of ['', 'hello', 'txn_short', 'txn_../../customers', 'buyer@example.com']) {
+    assert.equal((await verify({ key })).status, 400, `key ${JSON.stringify(key)}`);
+  }
   assert.equal((await verify('{oops')).status, 400);
   assert.equal((await verify(undefined, ENV, 'GET')).status, 405);
   assert.equal(calls.length, 0);
@@ -89,9 +96,9 @@ test('CORS preflight is allowed so the extension can call the API', async () => 
 });
 
 test('a missing API key or a Paddle outage returns an error, not "pro: false"', async () => {
-  assert.equal((await verify({ email: 'buyer@example.com' }, { ...ENV, PADDLE_API_KEY: '' })).status, 503);
+  assert.equal((await verify({ key: KEY }, { ...ENV, PADDLE_API_KEY: '' })).status, 503);
   paddle.fail = true;
-  assert.equal((await verify({ email: 'buyer@example.com' })).status, 502);
+  assert.equal((await verify({ key: KEY })).status, 502);
 });
 
 test('other paths are served from the static site', async () => {

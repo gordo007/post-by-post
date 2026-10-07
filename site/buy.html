@@ -29,15 +29,21 @@
   <div class="hero" id="thanks" hidden>
     <img src="/icon.svg" alt="">
     <h1>Thank you!</h1>
-    <p class="lead">Your receipt is on its way to <strong id="buyer-email">your email</strong>.</p>
+    <p class="lead" id="auto-status">Unlocking Pro in this browser…</p>
     <div class="card steps">
-      <h3>Unlock Pro in your browser</h3>
+      <h3>Your license key</h3>
+      <p>Keep it somewhere safe. You'll need it to unlock Pro on another computer or after reinstalling.</p>
+      <div class="key-row">
+        <code id="license-key"></code>
+        <button class="btn secondary" id="copy-key" type="button">Copy</button>
+      </div>
+      <h3>To unlock Pro manually</h3>
       <ol>
         <li>Click the Post-by-Post icon in your browser toolbar.</li>
-        <li>Under <em>Already bought?</em>, enter the email you used at checkout.</li>
+        <li>Under <em>Already bought?</em>, paste your license key.</li>
         <li>Click <strong>Unlock</strong>.</li>
       </ol>
-      <p>Questions? <a href="mailto:support@postbypost.app">support@postbypost.app</a></p>
+      <p>Lost your key? Email <a href="mailto:support@postbypost.app">support@postbypost.app</a> from your purchase email.</p>
     </div>
   </div>
 </main>
@@ -57,18 +63,55 @@
     priceId: 'pri_01m4awmrgacaa31s1yqqqbrcd0', // Post-by-Post Pro, $3.99 one-time
   };
 
-  function showThanks(email) {
+  const STATUS = {
+    unlocked: 'Pro is now unlocked in this browser. Enjoy!',
+    invalid: "Your payment went through, but Pro couldn't be unlocked automatically yet. Wait a minute, then paste the key below into the extension.",
+    error: "Your payment went through, but we couldn't reach our server to unlock Pro. Paste the key below into the extension.",
+    missing: 'Install Post-by-Post, then paste the key below into it to unlock Pro.',
+  };
+
+  function showThanks(key) {
     document.getElementById('buy').hidden = true;
     document.getElementById('thanks').hidden = false;
-    if (email) document.getElementById('buyer-email').textContent = email;
+    document.getElementById('license-key').textContent = key;
+    const status = document.getElementById('auto-status');
+    if (!document.documentElement.dataset.postByPost) {
+      status.textContent = STATUS.missing; // extension not installed in this browser
+      return;
+    }
+    requestUnlock();
   }
+
+  // Paddle can take a few seconds to mark a fresh order as paid, so retry a
+  // few times before asking the buyer to unlock manually.
+  let attempts = 0;
+  function requestUnlock() {
+    attempts++;
+    const key = document.getElementById('license-key').textContent;
+    window.postMessage({ type: 'post-by-post:license', key }, location.origin);
+  }
+
+  // The extension answers with the result of unlocking.
+  window.addEventListener('message', (event) => {
+    if (event.source !== window || event.data?.type !== 'post-by-post:result') return;
+    if (event.data.status === 'invalid' && attempts < 5) {
+      setTimeout(requestUnlock, 3000);
+      return;
+    }
+    document.getElementById('auto-status').textContent = STATUS[event.data.status] ?? STATUS.error;
+  });
+
+  document.getElementById('copy-key').addEventListener('click', async (e) => {
+    await navigator.clipboard.writeText(document.getElementById('license-key').textContent);
+    e.target.textContent = 'Copied';
+  });
 
   if (PADDLE.environment === 'sandbox') Paddle.Environment.set('sandbox');
   Paddle.Initialize({
     token: PADDLE.token,
     eventCallback(event) {
-      if (event.name === 'checkout.completed') {
-        showThanks(event.data?.customer?.email);
+      if (event.name === 'checkout.completed' && event.data?.transaction_id) {
+        showThanks(event.data.transaction_id);
         setTimeout(() => Paddle.Checkout.close(), 1500);
       }
     },

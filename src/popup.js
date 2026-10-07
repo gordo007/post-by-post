@@ -24,8 +24,8 @@ async function render() {
   }
   $('keyHint').hidden = true;
   $('devPro').checked = state.devPro;
-  $('licensed').hidden = !state.license?.email;
-  $('licensed').textContent = state.license?.email ? `Pro unlocked for ${state.license.email}. Thank you!` : '';
+  $('licensed').hidden = !state.license?.key;
+  $('licensed').textContent = state.license?.key ? 'Pro unlocked. Thank you for your support!' : '';
 }
 
 $('enabled').addEventListener('change', (e) => PBP.save({ enabled: e.target.checked }));
@@ -44,16 +44,14 @@ $('devPro').addEventListener('change', (e) => PBP.save({ devPro: e.target.checke
 
 $('restore').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = $('email').value.trim();
   const status = (text) => ($('restoreStatus').textContent = text);
   $('unlock').disabled = true;
   status('Checking…');
   try {
-    if (await PBP.verifyPurchase(email)) {
+    if (await PBP.activateLicense($('licenseKey').value)) {
       status('');
-      await PBP.save({ license: { email, checkedAt: Date.now() } });
     } else {
-      status("We couldn't find a Pro purchase for that email. Use the email from your Paddle receipt, or contact support@postbypost.app.");
+      status("That license key wasn't recognised. Check it matches the one on your purchase page, or contact support@postbypost.app.");
     }
   } catch {
     status("Couldn't reach the server. Check your connection and try again.");
@@ -68,7 +66,7 @@ async function recheckLicense() {
   const { license } = await PBP.load();
   if (!PBP.needsRecheck(license)) return;
   try {
-    const pro = await PBP.verifyPurchase(license.email);
+    const pro = await PBP.verifyLicense(license.key);
     await PBP.save({ license: pro ? { ...license, checkedAt: Date.now() } : null });
   } catch {
     // offline or server error: try again next time

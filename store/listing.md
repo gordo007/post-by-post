@@ -47,7 +47,8 @@ Not affiliated with or endorsed by Reddit, Inc.
 
 • Single purpose: "Makes Reddit feeds scroll one post at a time, so each post lands fully in view."
 • Permission "storage": "Saves the user's settings (hotkeys, auto-scroll timer, on/off) in the browser."
-• Host permission reddit.com: "The extension only runs on Reddit, where it adjusts scrolling."
+• Host permission reddit.com: "Adjusts scrolling on Reddit feeds."
+• Host permission postbypost.app: "Receives the user's Pro license key from our own website after checkout, so Pro unlocks without copy-pasting."
 • Remote code: No.
 • Data usage: collects no user data (tick none of the boxes), and certify the three statements.
 • Privacy policy URL: link to PRIVACY.md (see README) or a page on your website.

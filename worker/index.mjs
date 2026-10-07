@@ -1,11 +1,11 @@
-// postbypost.app server code: one endpoint that confirms Pro purchases with Paddle.
+// postbypost.app server code: one endpoint that confirms Pro license keys with Paddle.
 // Everything else on the domain is the static website in site/.
 //
-// POST /api/verify  {"email": "..."}  ->  {"pro": true | false}
+// POST /api/verify  {"key": "txn_..."}  ->  {"pro": true | false}
 //
-// "pro" is true when that email has a completed Paddle purchase of the Pro
-// price that hasn't been refunded. Nothing is stored here: each check asks
-// Paddle directly.
+// A license key is the Paddle transaction ID of a Pro purchase. "pro" is true
+// when that transaction is paid/completed, includes the Pro price, and has no
+// approved refund. Nothing is stored here: each check asks Paddle directly.
 //
 // Configuration (wrangler.jsonc "vars", plus one secret set in the dashboard):
 //   PADDLE_ENV      "sandbox" or "production"
@@ -18,12 +18,13 @@ const PADDLE_API = {
 };
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*', // the extension popup calls this from its own origin
+  'Access-Control-Allow-Origin': '*', // the extension calls this from its own origin
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const KEY_RE = /^txn_[a-z0-9]{20,40}$/;
+const PAID = ['paid', 'completed']; // "paid" briefly precedes "completed" right after checkout
 
 export default {
   async fetch(request, env) {
@@ -43,42 +44,32 @@ async function handleVerify(request, env) {
   } catch {
     return json({ error: 'bad_request' }, 400);
   }
-  const email = String(body?.email ?? '').trim().toLowerCase();
-  if (email.length > 254 || !EMAIL_RE.test(email)) return json({ error: 'invalid_email' }, 400);
+  const key = String(body?.key ?? '').trim().toLowerCase();
+  if (!KEY_RE.test(key)) return json({ error: 'invalid_key' }, 400);
   if (!env.PADDLE_API_KEY || !env.PRO_PRICE_ID) return json({ error: 'not_configured' }, 503);
 
   try {
-    return json({ pro: await hasPurchasedPro(email, env) });
+    return json({ pro: await isValidLicense(key, env) });
   } catch (err) {
     console.error('verify failed:', err.message);
     return json({ error: 'upstream_error' }, 502);
   }
 }
 
-// True if any Paddle customer with this email completed a purchase of the Pro
-// price that has no approved refund.
-export async function hasPurchasedPro(email, env) {
+export async function isValidLicense(key, env) {
   const base = PADDLE_API[env.PADDLE_ENV] ?? PADDLE_API.sandbox;
   const get = async (path) => {
     const res = await fetch(base + path, { headers: { Authorization: `Bearer ${env.PADDLE_API_KEY}` } });
+    if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Paddle ${path.split('?')[0]} returned ${res.status}`);
-    return (await res.json()).data ?? [];
+    return (await res.json()).data ?? null;
   };
 
-  const customers = await get(`/customers?email=${encodeURIComponent(email)}`);
-  for (const customer of customers) {
-    const transactions = await get(
-      `/transactions?customer_id=${encodeURIComponent(customer.id)}&status=completed&per_page=50`,
-    );
-    for (const txn of transactions) {
-      if (!txn.items?.some((item) => item.price?.id === env.PRO_PRICE_ID)) continue;
-      const refunds = await get(
-        `/adjustments?transaction_id=${encodeURIComponent(txn.id)}&action=refund&status=approved`,
-      );
-      if (refunds.length === 0) return true;
-    }
-  }
-  return false;
+  const txn = await get(`/transactions/${encodeURIComponent(key)}`);
+  if (!txn || !PAID.includes(txn.status)) return false;
+  if (!txn.items?.some((item) => item.price?.id === env.PRO_PRICE_ID)) return false;
+  const refunds = await get(`/adjustments?transaction_id=${encodeURIComponent(key)}&action=refund&status=approved`);
+  return !refunds?.length;
 }
 
 function json(data, status = 200) {

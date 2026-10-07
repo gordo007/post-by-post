@@ -49,14 +49,18 @@ On the free plan these controls are locked and the defaults apply.
 **Buying and unlocking Pro** (Paddle; currently in Sandbox):
 1. The menu's **Buy Pro** button opens `postbypost.app/buy`, which opens
    Paddle's checkout for the Pro price.
-2. After paying, the buyer enters their purchase email under
+2. After paying, the buy page shows the **license key** (the Paddle
+   transaction ID, `txn_…`) and hands it to the extension
+   (`src/site.js`, which runs on postbypost.app), so Pro unlocks
+   automatically. On another computer, the buyer pastes the key under
    **Already bought?** in the menu.
-3. The extension asks `POST https://postbypost.app/api/verify`
-   (`worker/index.mjs`), which checks Paddle for a completed, unrefunded
-   purchase of the Pro price and answers `{"pro": true|false}`. Nothing is
-   stored server-side.
-4. The extension saves the license in browser storage and re-checks it
-   weekly (refunds lock Pro again; being offline doesn't).
+3. Either way the extension asks `POST https://postbypost.app/api/verify`
+   (`worker/index.mjs`), which checks with Paddle that the transaction is
+   paid, includes the Pro price and isn't refunded, and answers
+   `{"pro": true|false}`. Nothing is stored server-side.
+4. The extension saves the key in browser storage and re-checks it weekly
+   (refunds lock Pro again; being offline doesn't). Lost keys: look up the
+   buyer's order under Transactions in Paddle.
 
 Unpacked (developer) installs also show a **Developer: unlock Pro** switch
 for testing. Store installs never see it.

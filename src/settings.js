@@ -11,7 +11,7 @@ var PBP = (() => {
     autoScroll: false, // Pro: auto-scroll mode
     autoScrollSeconds: 8,
     devPro: false, // developer-only Pro unlock, see isPro()
-    license: null, // { email, checkedAt } once a purchase is confirmed
+    license: null, // { key, checkedAt } once a purchase is confirmed
   };
 
   const API_BASE = 'https://postbypost.app';
@@ -22,29 +22,41 @@ var PBP = (() => {
   // Keys that can't be used as custom hotkeys: they already page, type, or navigate.
   const RESERVED_KEYS = [' ', 'PageUp', 'PageDown', 'Tab', 'Enter', 'Escape', 'Home', 'End', 'Backspace'];
 
-  // Pro is unlocked by a purchase confirmed through postbypost.app (see
-  // verifyPurchase), or, on developer (unpacked) installs only, by the
-  // popup's developer switch.
+  // Pro is unlocked by a license key confirmed through postbypost.app (see
+  // verifyLicense), or, on developer (unpacked) installs only, by the
+  // popup's developer switch. A license key is the Paddle order number
+  // (transaction ID, "txn_...") of a Pro purchase.
   function isPro(s) {
-    return s.devPro === true || Boolean(s.license?.email);
+    return s.devPro === true || Boolean(s.license?.key);
   }
 
-  // Ask postbypost.app whether this email bought Pro. Resolves true/false;
-  // rejects if the server can't be reached or answers with an error.
-  async function verifyPurchase(email) {
+  function normalizeLicenseKey(key) {
+    return String(key ?? '').trim().toLowerCase();
+  }
+
+  // Ask postbypost.app whether this key is a valid Pro purchase. Resolves
+  // true/false; rejects if the server can't be reached or answers with an error.
+  async function verifyLicense(key) {
     const res = await fetch(`${API_BASE}/api/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ key: normalizeLicenseKey(key) }),
     });
     const body = await res.json().catch(() => ({}));
-    if (res.status === 400) return false; // not a valid email
+    if (res.status === 400) return false; // not a well-formed key
     if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
     return body.pro === true;
   }
 
+  // Verify a key and, if valid, save it. Returns true if Pro is now unlocked.
+  async function activateLicense(key) {
+    if (!(await verifyLicense(key))) return false;
+    await save({ license: { key: normalizeLicenseKey(key), checkedAt: Date.now() } });
+    return true;
+  }
+
   function needsRecheck(license, now = Date.now()) {
-    return Boolean(license?.email) && now - (license.checkedAt ?? 0) > RECHECK_MS;
+    return Boolean(license?.key) && now - (license.checkedAt ?? 0) > RECHECK_MS;
   }
 
   // The settings that actually apply: free users get the defaults for every Pro setting.
@@ -88,7 +100,8 @@ var PBP = (() => {
     AUTO_SCROLL_SECONDS,
     RESERVED_KEYS,
     isPro,
-    verifyPurchase,
+    verifyLicense,
+    activateLicense,
     needsRecheck,
     effective,
     load,
