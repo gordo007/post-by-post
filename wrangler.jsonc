@@ -1,0 +1,10 @@
+// Cloudflare deploy settings for the postbypost.app website.
+// The site is plain static files in site/; there is no server code.
+{
+  "name": "post-by-post",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "404-page"
+  }
+}
