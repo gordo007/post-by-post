@@ -14,9 +14,9 @@
     "run_worker_first": ["/api/*"]
   },
   "vars": {
-    // Switch both to the live values when Paddle approves the account.
-    "PADDLE_ENV": "sandbox",
-    "PRO_PRICE_ID": "pri_01m4awmrgacaa31s1yqqqbrcd0"
+    // Live Paddle account.
+    "PADDLE_ENV": "production",
+    "PRO_PRICE_ID": "pri_01m4cc8gaek1hq4njx5237rd7n"
   }
   // PADDLE_API_KEY is a secret: set it in the Cloudflare dashboard, never here.
 }
