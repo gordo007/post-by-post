@@ -33,7 +33,7 @@ SMART, NOT PUSHY
 • Reddit keeps loading more posts as you go
 • Works on Home, Popular, subreddits and Search; leaves post pages alone
 
-PRO (one-time purchase)
+PRO ($3.99, one-time purchase)
 • Auto-scroll: hands-free browsing, one post every 3–120 seconds. Space pauses and resumes it, with a YouTube-style pause indicator
 • Custom hotkeys: pick your own keys for next and previous
 • On/off switch: turn snapping off for a while without uninstalling
