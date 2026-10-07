@@ -4,6 +4,9 @@
   "name": "post-by-post",
   "main": "worker/index.mjs",
   "compatibility_date": "2026-10-01",
+  // Keep variables added in the Cloudflare dashboard (e.g. PADDLE_API_KEY) when
+  // deploying from GitHub, instead of resetting them to the list below.
+  "keep_vars": true,
   "assets": {
     "directory": "./site",
     "binding": "ASSETS",
