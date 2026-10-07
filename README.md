@@ -45,11 +45,26 @@ Click the Post-by-Post icon in the browser toolbar to open the menu.
   and similar keys can't be assigned, as they already have jobs.
 
 On the free plan these controls are locked and the defaults apply.
-**Payments aren't connected yet.** The Pro check lives in one function,
-`isPro()` in `src/settings.js`, where a payment method's license check will
-go. Until then, unpacked (developer) installs show a **Developer: unlock
-Pro** switch at the bottom of the menu for testing. Store installs never
-see it.
+
+**Buying and unlocking Pro** (Paddle; currently in Sandbox):
+1. The menu's **Buy Pro** button opens `postbypost.app/buy`, which opens
+   Paddle's checkout for the Pro price.
+2. After paying, the buyer enters their purchase email under
+   **Already bought?** in the menu.
+3. The extension asks `POST https://postbypost.app/api/verify`
+   (`worker/index.mjs`), which checks Paddle for a completed, unrefunded
+   purchase of the Pro price and answers `{"pro": true|false}`. Nothing is
+   stored server-side.
+4. The extension saves the license in browser storage and re-checks it
+   weekly (refunds lock Pro again; being offline doesn't).
+
+Unpacked (developer) installs also show a **Developer: unlock Pro** switch
+for testing. Store installs never see it.
+
+**Going live:** in `wrangler.jsonc` set `PADDLE_ENV` to `production` and
+`PRO_PRICE_ID` to the live price; in `site/buy.html` set the live
+environment, client-side token and price ID; and set the live
+`PADDLE_API_KEY` secret on the Cloudflare Worker.
 
 ## Install for testing
 
@@ -87,4 +102,4 @@ markup and snapping stops working, update those selectors.
 
 ## Roadmap
 
-- Connect a payment method to `isPro()` (Stripe and PayPal excluded).
+- Switch Paddle from Sandbox to live once the account and website are approved.

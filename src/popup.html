@@ -62,9 +62,19 @@
 
   <section id="upsell" class="upsell">
     <strong>Unlock Pro</strong>
-    <small>On/off switch, auto-scroll and custom hotkeys.</small>
-    <button type="button" id="upgrade" disabled>Payments coming soon</button>
+    <small>On/off switch, auto-scroll and custom hotkeys. $3.99 once, no subscription.</small>
+    <a id="buy" class="buy" href="https://postbypost.app/buy.html" target="_blank" rel="noopener">Buy Pro, $3.99</a>
+    <form id="restore">
+      <label for="email">Already bought? Enter the email from your receipt:</label>
+      <div class="restore-row">
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <button type="submit" id="unlock">Unlock</button>
+      </div>
+      <p id="restoreStatus" class="hint" role="status"></p>
+    </form>
   </section>
+
+  <p id="licensed" class="hint licensed" hidden></p>
 
   <label id="devRow" class="row dev" hidden>
     <span>

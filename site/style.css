@@ -77,3 +77,8 @@ header.top .brand { white-space: nowrap; }
 @media (max-width: 520px) {
   header.top nav a:not(:last-child) { display: none; }
 }
+
+.hero .note { color: var(--muted); font-size: 14px; margin-top: 14px; }
+.steps { text-align: left; max-width: 520px; margin: 24px auto 0; }
+.steps ol { padding-left: 20px; margin: 8px 0 12px; }
+.steps p { color: var(--muted); }

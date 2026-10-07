@@ -10,7 +10,7 @@ Post-by-Post is a browser extension that changes how Reddit feeds scroll. It is 
 
 **Where it runs:** only on reddit.com pages, where it adjusts scrolling. It reads the page only to find where posts begin and end.
 
-**Payments:** if you buy Pro, the purchase is handled by our reseller Paddle.com, the Merchant of Record, under its own privacy policy. We never see your card details. To unlock Pro, we receive and store only your email address and an order identifier, used only to confirm the purchase and for support.
+**Payments:** if you buy Pro, the purchase is handled by our reseller Paddle.com, the Merchant of Record, under its own privacy policy. We never see your card details. To unlock Pro, the email you enter is sent to postbypost.app, which asks Paddle whether it has a Pro purchase; it isn't stored on our servers, only in your browser, and is re-checked about weekly so refunds are reflected.
 
 **Changes:** if this policy changes, the new version will be published here with a new date.
 

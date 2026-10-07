@@ -259,3 +259,80 @@ test('the pause icon and label show even when the page tries to cover them', asy
   await page.close();
   await popup.close();
 });
+
+// --- Unlocking with a purchase email (the postbypost.app API is simulated) ---
+
+async function fakeApi(handler) {
+  await context.unroute('https://postbypost.app/api/verify');
+  await context.route('https://postbypost.app/api/verify', handler);
+}
+const answer = (body, status = 200) => (route) =>
+  route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+
+test('free plan shows the Buy button linking to the website', async () => {
+  const popup = await freshPopup();
+  assert.equal(await popup.getAttribute('#buy', 'href'), 'https://postbypost.app/buy.html');
+  assert.equal(await popup.isVisible('#licensed'), false);
+  await popup.close();
+});
+
+test('entering a purchase email unlocks Pro', async () => {
+  let sent;
+  await fakeApi((route) => {
+    sent = JSON.parse(route.request().postData());
+    return answer({ pro: true })(route);
+  });
+  const popup = await freshPopup();
+  await popup.fill('#email', 'buyer@example.com');
+  await popup.click('#unlock');
+  await popup.waitForSelector('body.pro');
+  assert.deepEqual(sent, { email: 'buyer@example.com' });
+  assert.equal(await popup.textContent('#plan'), 'Pro');
+  assert.match(await popup.textContent('#licensed'), /buyer@example\.com/);
+  assert.equal(await popup.isVisible('#upsell'), false);
+
+  // and Pro features work on Reddit: custom keys apply
+  await setKey(popup, 'nextKeys', 0, 'n');
+  const page = await open();
+  await page.keyboard.press('n');
+  assert.equal(await topOf(page, 'p0'), LINE);
+  await page.close();
+  await popup.close();
+});
+
+test('an email without a purchase stays on the free plan with a helpful message', async () => {
+  await fakeApi(answer({ pro: false }));
+  const popup = await freshPopup();
+  await popup.fill('#email', 'someone@example.com');
+  await popup.click('#unlock');
+  await popup.waitForFunction(() => document.getElementById('restoreStatus').textContent.includes("couldn't find"));
+  assert.equal(await popup.textContent('#plan'), 'Free');
+  await popup.close();
+});
+
+test('a server error says so instead of claiming there is no purchase', async () => {
+  await fakeApi(answer({ error: 'upstream_error' }, 502));
+  const popup = await freshPopup();
+  await popup.fill('#email', 'buyer@example.com');
+  await popup.click('#unlock');
+  await popup.waitForFunction(() => document.getElementById('restoreStatus').textContent.includes("Couldn't reach"));
+  assert.equal(await popup.textContent('#plan'), 'Free');
+  await popup.close();
+});
+
+test('a weekly re-check removes Pro after a refund, but keeps it when offline', async () => {
+  const stale = { email: 'buyer@example.com', checkedAt: Date.now() - 8 * 24 * 3600 * 1000 };
+
+  await fakeApi((route) => route.abort()); // offline
+  let popup = await freshPopup();
+  await popup.evaluate((license) => new Promise((r) => chrome.storage.sync.set({ license }, r)), stale);
+  await popup.reload();
+  await popup.waitForTimeout(500);
+  assert.equal(await popup.textContent('#plan'), 'Pro', 'offline: keep Pro');
+
+  await fakeApi(answer({ pro: false })); // refunded
+  await popup.reload();
+  await popup.waitForSelector('body:not(.pro)');
+  assert.equal(await popup.textContent('#plan'), 'Free', 'refunded: back to Free');
+  await popup.close();
+});

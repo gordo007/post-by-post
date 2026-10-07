@@ -11,18 +11,40 @@ var PBP = (() => {
     autoScroll: false, // Pro: auto-scroll mode
     autoScrollSeconds: 8,
     devPro: false, // developer-only Pro unlock, see isPro()
+    license: null, // { email, checkedAt } once a purchase is confirmed
   };
+
+  const API_BASE = 'https://postbypost.app';
+  const RECHECK_MS = 7 * 24 * 60 * 60 * 1000; // re-confirm a purchase weekly (catches refunds)
 
   const AUTO_SCROLL_SECONDS = { min: 3, max: 120 };
 
   // Keys that can't be used as custom hotkeys: they already page, type, or navigate.
   const RESERVED_KEYS = [' ', 'PageUp', 'PageDown', 'Tab', 'Enter', 'Escape', 'Home', 'End', 'Backspace'];
 
-  // Pro unlock. No payment method is connected yet; when one is, its license
-  // check goes here. Until then only a developer (unpacked) install can unlock
-  // Pro, from the popup, for testing.
+  // Pro is unlocked by a purchase confirmed through postbypost.app (see
+  // verifyPurchase), or, on developer (unpacked) installs only, by the
+  // popup's developer switch.
   function isPro(s) {
-    return s.devPro === true;
+    return s.devPro === true || Boolean(s.license?.email);
+  }
+
+  // Ask postbypost.app whether this email bought Pro. Resolves true/false;
+  // rejects if the server can't be reached or answers with an error.
+  async function verifyPurchase(email) {
+    const res = await fetch(`${API_BASE}/api/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 400) return false; // not a valid email
+    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+    return body.pro === true;
+  }
+
+  function needsRecheck(license, now = Date.now()) {
+    return Boolean(license?.email) && now - (license.checkedAt ?? 0) > RECHECK_MS;
   }
 
   // The settings that actually apply: free users get the defaults for every Pro setting.
@@ -66,6 +88,8 @@ var PBP = (() => {
     AUTO_SCROLL_SECONDS,
     RESERVED_KEYS,
     isPro,
+    verifyPurchase,
+    needsRecheck,
     effective,
     load,
     save,
