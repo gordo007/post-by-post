@@ -77,7 +77,7 @@ environment, client-side token and price ID; and set the live
 2. Turn on **Developer mode**.
 3. Click **Load unpacked** and select this folder.
 
-**Firefox** (121 or later)
+**Firefox** (115 or later)
 1. Run `npm run build` (Firefox needs an add-on ID that only the Firefox
    build adds; the root `manifest.json` stays Chrome-clean).
 2. Open `about:debugging#/runtime/this-firefox`.

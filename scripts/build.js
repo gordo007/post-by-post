@@ -11,7 +11,7 @@ const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const FILES = ['src', 'icons'];
 const FIREFOX_SETTINGS = {
-  gecko: { id: 'post-by-post@extension', strict_min_version: '121.0' },
+  gecko: { id: 'post-by-post@extension', strict_min_version: '115.0' },
 };
 
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
