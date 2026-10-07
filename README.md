@@ -82,6 +82,7 @@ markup and snapping stops working, update those selectors.
 
 - `store/listing.md`: Chrome Web Store name, description, privacy answers and image list.
 - `PRIVACY.md`: privacy policy (the extension collects no data).
+- `site/`: the postbypost.app website (home, pricing, Terms, Privacy, Refunds). Static files, no build step; deployed with Cloudflare Pages (build output directory `site`).
 - `icons/src/`: the icon's source drawings (`icon.svg`, and a simplified `icon-small.svg` for 16px).
 
 ## Roadmap
