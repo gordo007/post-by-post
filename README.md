@@ -5,7 +5,7 @@ wheel or trackpad, and each press of a navigation key, lands the next post
 exactly at the top of the screen, just below Reddit's header. You never end up
 between two half-visible posts.
 
-## Features (v0.1, Step 1)
+## Features
 
 - **Snap-scrolling:** one wheel or trackpad flick moves exactly one post.
   Trackpad momentum is absorbed, so you don't skip several posts at once.
@@ -31,7 +31,7 @@ between two half-visible posts.
 - **Active on** Home, Popular/All, subreddit feeds (with any sort), and
   Search. It stays off on post detail pages and everywhere else.
 
-## Pro features (v0.3, in testing)
+## Pro features
 
 Click the Post-by-Post icon in the browser toolbar to open the menu.
 
@@ -77,6 +77,12 @@ npm run build   # builds Chrome and Firefox store zips into dist/
 The code that finds Reddit's posts and header is at the top of
 `src/content.js` (`POST_SELECTOR`, `HEADER_SELECTOR`). If Reddit changes its
 markup and snapping stops working, update those selectors.
+
+## Store and privacy
+
+- `store/listing.md`: Chrome Web Store name, description, privacy answers and image list.
+- `PRIVACY.md`: privacy policy (the extension collects no data).
+- `icons/src/`: the icon's source drawings (`icon.svg`, and a simplified `icon-small.svg` for 16px).
 
 ## Roadmap
 

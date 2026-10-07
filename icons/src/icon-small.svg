@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- 16px toolbar version: simplified so it stays crisp. -->
+  <rect width="16" height="16" rx="3.5" fill="#FF4500"/>
+  <rect x="3" y="3" width="10" height="7" rx="1.5" fill="#fff"/>
+  <rect x="3" y="12" width="10" height="4" rx="1.5" fill="#fff" opacity="0.5"/>
+</svg>

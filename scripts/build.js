@@ -23,7 +23,12 @@ for (const [browser, extra] of [
 ]) {
   const dir = path.join(DIST, browser);
   fs.mkdirSync(dir, { recursive: true });
-  for (const f of FILES) fs.cpSync(path.join(ROOT, f), path.join(dir, f), { recursive: true });
+  for (const f of FILES) {
+    fs.cpSync(path.join(ROOT, f), path.join(dir, f), {
+      recursive: true,
+      filter: (src) => !src.startsWith(path.join(ROOT, 'icons', 'src')), // icon source drawings stay out
+    });
+  }
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...manifest, ...extra }, null, 2) + '\n');
   const zip = path.join(DIST, `post-by-post-${browser}-${manifest.version}.zip`);
   execFileSync('zip', ['-qr', zip, '.'], { cwd: dir });

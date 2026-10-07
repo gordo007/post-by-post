@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Post-by-Post icon: one post card held by "snap" brackets, the next one peeking in below. -->
+  <defs>
+    <clipPath id="tile"><rect width="128" height="128" rx="28"/></clipPath>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#FF4500"/>
+  <g clip-path="url(#tile)">
+    <!-- next post, peeking in -->
+    <rect x="30" y="98" width="68" height="44" rx="9" fill="#fff" opacity="0.45"/>
+    <!-- current post -->
+    <rect x="30" y="34" width="68" height="52" rx="9" fill="#fff"/>
+    <rect x="40" y="45" width="30" height="7" rx="3.5" fill="#FF4500" opacity="0.85"/>
+    <rect x="40" y="58" width="46" height="5" rx="2.5" fill="#FF4500" opacity="0.4"/>
+    <rect x="40" y="68" width="38" height="5" rx="2.5" fill="#FF4500" opacity="0.4"/>
+    <!-- snap brackets -->
+    <g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 34 V24 H30"/>
+      <path d="M110 34 V24 H98"/>
+      <path d="M18 86 V96 H30" opacity="0.9"/>
+      <path d="M110 86 V96 H98" opacity="0.9"/>
+    </g>
+  </g>
+</svg>
