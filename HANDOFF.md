@@ -25,43 +25,37 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 - Pro costs **$3.99 one-time**. License key = the Paddle transaction ID (`txn_…`).
 
 ## Paddle IDs (none of these are secret)
-| | Sandbox (live on the site now) | Live (prepared, not deployed) |
+| | Sandbox (old, for testing) | Live (on the site since 12 Oct 2026) |
 |---|---|---|
 | Dashboard | https://sandbox-vendors.paddle.com | https://vendors.paddle.com |
 | Price ID | `pri_01m4awmrgacaa31s1yqqqbrcd0` | `pri_01m4cc8gaek1hq4njx5237rd7n` |
 | Product ID | `pro_01m4ap6z5dz89yhr2ystqssfxr` | `pro_01m4cc42znpx329hqhfpwavpfw` |
 | Client-side token | `test_4509231d6c8e613994ca16ae20f` | `live_19bab355a6d9d79e2d7d5183c76` |
 
-- API keys are **secret** and never go in the repo or in chat. The Sandbox
-  API key is stored in Cloudflare as the variable `PADDLE_API_KEY` (plain
-  variable, because the Secret checkbox wouldn't tick in Firefox; acceptable
-  for a read-only Sandbox key). It expires ~Jan 2027.
+- API keys are **secret** and never go in the repo or in chat. The **live**
+  API key is stored in Cloudflare as the Secret `PADDLE_API_KEY` (Workers &
+  Pages → post-by-post → Settings → Variables and secrets). Paddle API keys
+  expire: check its expiry date in Paddle → Developer tools → Authentication
+  and replace it before then, or license checks start failing.
 - `keep_vars: true` in `wrangler.jsonc` stops deploys wiping that variable.
 
 ## Status
 - Sandbox purchase tested end to end in Firefox: checkout → key shown →
   Pro unlocked in the extension. ✅
 - Paddle Live: product and price created ✅, client-side token created ✅,
-  account verification **Complete** ✅, website approval for postbypost.app
-  **In review** ⏳ (check https://vendors.paddle.com/settings/website-approval).
-- Default payment link `https://postbypost.app/buy` in Live Checkout settings
-  could not be saved until the domain is approved.
+  account verification **Complete** ✅, website approval **Approved** ✅,
+  default payment link saved ✅, live API key stored in Cloudflare as a
+  **Secret** `PADDLE_API_KEY` ✅ (set from the owner's phone: desktop browsers
+  couldn't tick Cloudflare's Secret option), `go-live` merged into `main` ✅.
+- PayPal stays enabled at checkout (owner is fine with it: Paddle owns that
+  PayPal account; payouts to the owner are by bank transfer).
 
 ## Next steps, in order
-1. When the domain is approved: save the Default payment link at
-   https://vendors.paddle.com/checkout-settings.
-2. Merge branch **`go-live`** into `main` (it switches `wrangler.jsonc` to
-   `PADDLE_ENV: production` + live price, and `site/buy.html` to the live
-   environment, token and price). Cloudflare deploys it automatically.
-3. Owner creates a **live API key** in Paddle (Developer tools →
-   Authentication → API keys; read permission on transactions and
-   adjustments is enough), and replaces `PADDLE_API_KEY` in the Cloudflare
-   Worker settings, **as a Secret if at all possible, with no screenshots of
-   the key**. Then delete the Sandbox value.
-4. Owner makes one real $3.99 purchase, checks Pro unlocks, then refunds it
+1. (Done: domain approved, payment link saved, go-live merged, live key set.)
+2. Owner makes one real $3.99 purchase, checks Pro unlocks, then refunds it
    in Paddle and checks the weekly re-check would lock it (optional).
-5. Optional: disable PayPal under Checkout settings → Payment methods.
-6. Store launch: screenshots, Chrome Web Store developer account ($5),
+3. Optional: disable PayPal under Checkout settings → Payment methods.
+4. Store launch: screenshots, Chrome Web Store developer account ($5),
    listing text in `store/listing.md`, privacy in `PRIVACY.md`; then Firefox
    Add-ons and Edge. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.
