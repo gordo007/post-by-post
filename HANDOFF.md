@@ -20,6 +20,7 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
   by the Cloudflare Worker `post-by-post`, auto-deployed from `main`
   (`npx wrangler deploy`, no build command; settings in `wrangler.jsonc`).
   `/api/verify` checks license keys with Paddle (`worker/index.mjs`).
+  Unlinked page https://postbypost.app/check checks a key by hand (support).
 - Email **support@postbypost.app** forwards to the owner's Gmail
   (Cloudflare Email Routing). Working.
 - Pro costs **$3.99 one-time**. License key = the Paddle transaction ID (`txn_…`).
@@ -52,8 +53,9 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 
 ## Next steps, in order
 1. (Done: domain approved, payment link saved, go-live merged, live key set.)
-2. Owner makes one real $3.99 purchase, checks Pro unlocks, then refunds it
-   in Paddle and checks the weekly re-check would lock it (optional).
+2. (Done 12 Oct: real $3.99 live purchase `txn_01m4pvwyg312tpa8p0z2fmdb3b`
+   went through, then was fully refunded; https://postbypost.app/check now
+   reports it "Not valid", so the live API key and refund check work.)
 3. Optional: disable PayPal under Checkout settings → Payment methods.
 4. Store launch: screenshots, Chrome Web Store developer account ($5),
    listing text in `store/listing.md`, privacy in `PRIVACY.md`; then Firefox
