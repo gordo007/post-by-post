@@ -46,7 +46,7 @@ Click the Post-by-Post icon in the browser toolbar to open the menu.
 
 On the free plan these controls are locked and the defaults apply.
 
-**Buying and unlocking Pro** (Paddle; currently in Sandbox):
+**Buying and unlocking Pro** (Paddle, live):
 1. The menu's **Buy Pro** button opens `postbypost.app/buy`, which opens
    Paddle's checkout for the Pro price.
 2. After paying, the buy page shows the **license key** (the Paddle
