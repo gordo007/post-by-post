@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Check a license key</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <img src="/icon.svg" alt="">
+    <a class="brand" href="/">Post-by-Post</a>
+    <nav><a href="/#features">Features</a><a href="/#pricing">Pricing</a><a href="mailto:support@postbypost.app">Support</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>Check a license key</h1>
+    <p class="lead">Paste a key to see whether it unlocks Pro.</p>
+    <form id="check" class="key-row">
+      <input id="key" type="text" placeholder="txn_…" autocomplete="off" spellcheck="false" required>
+      <button class="btn" type="submit">Check</button>
+    </form>
+    <p class="lead" id="result" role="status"></p>
+  </div>
+</main>
+
+<script>
+  const RESULTS = {
+    true: '✅ Valid: this key unlocks Pro.',
+    false: '❌ Not valid: unknown, unpaid or refunded.',
+  };
+  document.getElementById('check').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const result = document.getElementById('result');
+    result.textContent = 'Checking…';
+    try {
+      const res = await fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: document.getElementById('key').value }),
+      });
+      const data = await res.json();
+      if (data.error === 'invalid_key') data.pro = false; // not shaped like a key
+      result.textContent = 'pro' in data ? RESULTS[data.pro] : `⚠️ Server problem: ${data.error} (HTTP ${res.status})`;
+    } catch {
+      result.textContent = "⚠️ Couldn't reach the server.";
+    }
+  });
+</script>
+</body>
+</html>
