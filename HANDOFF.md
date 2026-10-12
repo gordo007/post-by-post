@@ -57,7 +57,8 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
    went through, then was fully refunded; https://postbypost.app/check now
    reports it "Not valid", so the live API key and refund check work.)
 3. Optional: disable PayPal under Checkout settings → Payment methods.
-4. Store launch: screenshots, Chrome Web Store developer account ($5),
-   listing text in `store/listing.md`, privacy in `PRIVACY.md`; then Firefox
-   Add-ons and Edge. Change the homepage button from "Coming soon" to the
+4. Store launch. Ready: listing text and form answers in `store/listing.md`,
+   images in `store/images/` (`node scripts/store-images.js` remakes them),
+   upload zip from `npm run build`. Chrome Web Store: developer account ($5)
+   and submission in progress (12 Oct). Then Firefox Add-ons and Edge. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.

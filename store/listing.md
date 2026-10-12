@@ -51,13 +51,19 @@ Not affiliated with or endorsed by Reddit, Inc.
 • Host permission postbypost.app: "Receives the user's Pro license key from our own website after checkout, so Pro unlocks without copy-pasting."
 • Remote code: No.
 • Data usage: collects no user data (tick none of the boxes), and certify the three statements.
-• Privacy policy URL: link to PRIVACY.md (see README) or a page on your website.
+• Privacy policy URL: https://postbypost.app/privacy.html
 
-## Images needed
+## Other fields
 
-• Icon 128×128: icons/icon128.png
-• Screenshots, 1280×800 (1–5): best taken on real Reddit in a normal-size window:
-  1. A feed with a post snapped neatly under the header
-  2. The Post-by-Post menu open (Pro unlocked)
-  3. Auto-scroll paused, with the label showing
-• Small promo tile 440×280 (optional)
+• Homepage URL: https://postbypost.app
+• Support URL: leave empty (support@postbypost.app goes in the account contact email)
+• Language: English
+• Mature content: No
+• Distribution: Public, all regions
+
+## Images (in store/images/, made by `node scripts/store-images.js`)
+
+• Store icon 128×128: icons/icon128.png
+• Screenshots 1280×800: screenshot-1-snap.png, screenshot-2-menu.png
+  (a real Reddit screenshot can be added later)
+• Small promo tile 440×280: promo-small.png
