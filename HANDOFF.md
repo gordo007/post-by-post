@@ -59,6 +59,15 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 3. Optional: disable PayPal under Checkout settings → Payment methods.
 4. Store launch. Ready: listing text and form answers in `store/listing.md`,
    images in `store/images/` (`node scripts/store-images.js` remakes them),
-   upload zip from `npm run build`. Chrome Web Store: developer account ($5)
-   and submission in progress (12 Oct). Then Firefox Add-ons and Edge. Change the homepage button from "Coming soon" to the
+   upload zip from `npm run build`. **Chrome Web Store: submitted for review
+   13 Oct 2026** (auto-publish on approval). Item ID
+   `pkgplalclecancaongbdlljdoojgnhim`, store link
+   https://chromewebstore.google.com/detail/pkgplalclecancaongbdlljdoojgnhim
+   (works once approved). Publisher "Kramerica Industries", trader account;
+   Google's trader verification is pending (owner lacks a proof-of-address
+   document; listing shows "non-trader" until verified). Dashboard:
+   https://chrome.google.com/webstore/devconsole (works in Firefox 115).
+   After approval: in `site/index.html` point the hero button ("Coming soon")
+   and the Pro "Available soon" button to the store link (and buy.html), and
+   update the "Get started" text. Then Firefox Add-ons and Edge. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.
