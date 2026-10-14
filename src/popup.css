@@ -17,6 +17,9 @@
   }
 }
 
+/* .row and friends set display, which would otherwise override the hidden attribute. */
+[hidden] { display: none !important; }
+
 body {
   width: 300px;
   margin: 0;
