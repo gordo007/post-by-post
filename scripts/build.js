@@ -11,7 +11,12 @@ const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const FILES = ['src', 'icons'];
 const FIREFOX_SETTINGS = {
-  gecko: { id: 'post-by-post@extension', strict_min_version: '115.0' },
+  gecko: {
+    id: 'post-by-post@postbypost.app',
+    strict_min_version: '115.0',
+    // Mozilla's data-sharing declaration: nothing is collected (see PRIVACY.md).
+    data_collection_permissions: { required: ['none'] },
+  },
 };
 
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));

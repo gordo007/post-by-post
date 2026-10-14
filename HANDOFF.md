@@ -67,6 +67,7 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
    Listing text and form answers: `store/listing.md`; images: `store/images/`
    (`node scripts/store-images.js` remakes them). Homepage buttons now link
    to the store and to buy.html.
-5. Next: Firefox Add-ons (`dist/post-by-post-firefox-<version>.zip`), then
+5. Next: Firefox Add-ons (`dist/post-by-post-firefox-<version>.zip`, add-on ID
+   `post-by-post@postbypost.app`; passes `npx web-ext lint`), then
    Edge Add-ons. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.
