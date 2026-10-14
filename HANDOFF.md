@@ -57,17 +57,16 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
    went through, then was fully refunded; https://postbypost.app/check now
    reports it "Not valid", so the live API key and refund check work.)
 3. Optional: disable PayPal under Checkout settings → Payment methods.
-4. Store launch. Ready: listing text and form answers in `store/listing.md`,
-   images in `store/images/` (`node scripts/store-images.js` remakes them),
-   upload zip from `npm run build`. **Chrome Web Store: submitted for review
-   13 Oct 2026** (auto-publish on approval). Item ID
-   `pkgplalclecancaongbdlljdoojgnhim`, store link
-   https://chromewebstore.google.com/detail/pkgplalclecancaongbdlljdoojgnhim
-   (works once approved). Publisher "Kramerica Industries", trader account;
-   Google's trader verification is pending (owner lacks a proof-of-address
-   document; listing shows "non-trader" until verified). Dashboard:
+4. Store launch. **Chrome Web Store: LIVE since 14 Oct 2026** (approved in
+   one day), version 0.5.1, item ID `pkgplalclecancaongbdlljdoojgnhim`:
+   https://chromewebstore.google.com/detail/post-by-post-for-reddit/pkgplalclecancaongbdlljdoojgnhim
+   Publisher "Kramerica Industries", trader account; Google's trader
+   verification is still pending (owner lacks a proof-of-address document;
+   listing shows "non-trader" until verified). Dashboard:
    https://chrome.google.com/webstore/devconsole (works in Firefox 115).
-   After approval: in `site/index.html` point the hero button ("Coming soon")
-   and the Pro "Available soon" button to the store link (and buy.html), and
-   update the "Get started" text. Then Firefox Add-ons and Edge. Change the homepage button from "Coming soon" to the
+   Listing text and form answers: `store/listing.md`; images: `store/images/`
+   (`node scripts/store-images.js` remakes them). Homepage buttons now link
+   to the store and to buy.html.
+5. Next: Firefox Add-ons (`dist/post-by-post-firefox-<version>.zip`), then
+   Edge Add-ons. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.
