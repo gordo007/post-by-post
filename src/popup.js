@@ -117,7 +117,9 @@ document.addEventListener(
 // Shown only for unpacked installs, so the Pro features can be tested before
 // a payment method is connected. Store installs never see it.
 chrome.management.getSelf((self) => {
-  $('devRow').hidden = self.installType !== 'development';
+  const dev = self.installType === 'development';
+  $('devRow').hidden = !dev;
+  if (!dev) PBP.save({ devPro: false }); // clear it if a store install ever had it on
 });
 
 chrome.storage.onChanged.addListener(render);

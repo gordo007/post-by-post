@@ -49,6 +49,9 @@ test('free plan: Pro controls are locked and show the defaults', async () => {
   assert.deepEqual(await popup.locator('.key').allTextContents(), ['J', '↓', 'K', '↑']);
   assert.equal(await popup.isVisible('#upsell'), true);
   assert.equal(await popup.isVisible('#devRow'), true, 'developer unlock shows for unpacked installs');
+  // Store installs set it hidden; that must win over the row's display style.
+  await popup.evaluate(() => (document.getElementById('devRow').hidden = true));
+  assert.equal(await popup.isVisible('#devRow'), false, 'hidden developer unlock stays hidden');
   await popup.close();
 });
 

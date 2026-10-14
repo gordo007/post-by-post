@@ -12,7 +12,7 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
   **Kramerica Industries** (site footer, Paddle trading name).
 
 ## What exists
-- Extension **Post-by-Post for Reddit** (MV3), version **0.5.1**, repo
+- Extension **Post-by-Post for Reddit** (MV3), version **0.5.2**, repo
   `gordo007/post-by-post`, branch `main`. Tests: `npm test` (46 passing).
   Builds: `npm run build` → `dist/post-by-post-{chrome,firefox}-<version>.zip`
   (Firefox build sets `strict_min_version` 115).
@@ -58,7 +58,7 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
    reports it "Not valid", so the live API key and refund check work.)
 3. Optional: disable PayPal under Checkout settings → Payment methods.
 4. Store launch. **Chrome Web Store: LIVE since 14 Oct 2026** (approved in
-   one day), version 0.5.1, item ID `pkgplalclecancaongbdlljdoojgnhim`:
+   one day), version 0.5.2 submitted 14 Oct (0.5.1 live), item ID `pkgplalclecancaongbdlljdoojgnhim`:
    https://chromewebstore.google.com/detail/post-by-post-for-reddit/pkgplalclecancaongbdlljdoojgnhim
    Publisher "Kramerica Industries", trader account; Google's trader
    verification is still pending (owner lacks a proof-of-address document;
