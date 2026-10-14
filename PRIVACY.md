@@ -1,10 +1,10 @@
 # Privacy policy: Post-by-Post for Reddit
 
-_Last updated: 7 October 2026_
+_Last updated: 12 October 2026_
 
 Post-by-Post is a browser extension that changes how Reddit feeds scroll. It is built to need as little as possible.
 
-**What it collects:** nothing. Post-by-Post does not collect, store, send, sell or share any personal information, browsing history, Reddit content or usage data. It contains no analytics or tracking, and it makes no network requests of its own.
+**What it collects:** nothing. Post-by-Post does not collect, store, send, sell or share any personal information, browsing history, Reddit content or usage data. It contains no analytics or tracking. Its only network request is the Pro license check described under Payments.
 
 **What it stores:** your Post-by-Post settings (snapping on/off, auto-scroll timer, hotkeys) are saved with your browser's built-in extension storage. If you use browser sync, your browser may sync them between your own devices. They are never sent to us.
 
