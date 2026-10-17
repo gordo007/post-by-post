@@ -1,93 +1,88 @@
 # Handoff notes (start here in a new chat)
 
-Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code works.
+Last updated: 17 Oct 2026. Read this first, then `README.md` for how the code
+works. **Follow the owner's rules in `CLAUDE.md` before every instruction.**
 
 ## About the owner
-- **Follow the rules in `CLAUDE.md` before every instruction** (always give
-  links; otherwise guide from big to small; easiest, maintenance-free way).
-- A novice. Wants **numbered, step-by-step instructions with exact links** and
-  what to click. Prefers short replies.
-- Windows 8.1, **Chrome 109** and **Firefox 115** (old: some modern dashboards
-  break in Chrome 109; Firefox usually works). Mouse wheel is broken.
+- Novice. Numbered steps, short replies, **always a direct link**; when no
+  link is possible, guide from the biggest thing on screen down to smaller
+  ones. Always pick the easiest, maintenance-free solution (see `CLAUDE.md`).
+- Windows 8.1, **Chrome 109** and **Firefox 115** (old; some dashboards break
+  in Chrome 109, Firefox usually works). Mouse wheel is broken: use End,
+  Home, Page Down. Cloudflare's "Secret" checkbox only works from the phone.
 - Against Stripe and PayPal, hence **Paddle** (merchant of record).
-- Wants their personal name hidden: the public seller name is
-  **Kramerica Industries** (site footer, Paddle trading name).
+- Public seller name: **Kramerica Industries** (site footer, Paddle,
+  Chrome Web Store, Firefox Add-ons). Exception: Google's trader details
+  (real name, address, phone) are shown to EU visitors; the owner accepted
+  this. A registered business would be needed to replace them.
 
-## What exists
-- Extension **Post-by-Post for Reddit** (MV3), version **0.5.2**, repo
-  `gordo007/post-by-post`, branch `main`. Tests: `npm test` (46 passing).
-  Builds: `npm run build` → `dist/post-by-post-{chrome,firefox}-<version>.zip`
-  (Firefox build sets `strict_min_version` 115).
-- Website **https://postbypost.app** (domain at Cloudflare Registrar), served
-  by the Cloudflare Worker `post-by-post`, auto-deployed from `main`
-  (`npx wrangler deploy`, no build command; settings in `wrangler.jsonc`).
-  `/api/verify` checks license keys against a D1 database that Paddle keeps
-  up to date through `/api/paddle-webhook` (`worker/index.mjs`).
-  Unlinked page https://postbypost.app/check checks a key by hand (support).
-- Email **support@postbypost.app** forwards to the owner's Gmail
-  (Cloudflare Email Routing). Working.
-- Pro costs **$3.99 one-time**. License key = the Paddle transaction ID (`txn_…`).
+## Status: launched ✅ (nothing needs regular attention)
+| | Where | State |
+|---|---|---|
+| Chrome Web Store | https://chromewebstore.google.com/detail/post-by-post-for-reddit/pkgplalclecancaongbdlljdoojgnhim | **Live**, v0.5.2, verified trader |
+| Firefox Add-ons | https://addons.mozilla.org/firefox/addon/post-by-post/ | v0.5.2 **submitted 17 Oct**, awaiting review |
+| Edge Add-ons | – | **Skipped**: Microsoft sign-up failed ("Not Authorized"); Edge users can install from the Chrome Web Store |
+| Website | https://postbypost.app | Live; "Add to Chrome" + "Buy Pro" buttons |
+| Payments | https://vendors.paddle.com | Live, $3.99 one-time |
+| License check | `worker/index.mjs` + D1 | Runs on Paddle notifications; **no expiring key** |
+| Support email | support@postbypost.app | Forwards to the owner's Gmail |
 
-## Paddle IDs (none of these are secret)
-| | Sandbox (old, for testing) | Live (on the site since 12 Oct 2026) |
+## How it fits together
+- Extension **Post-by-Post for Reddit** (MV3), repo `gordo007/post-by-post`,
+  branch `main`. Tests: `npm test` (56 passing). Build: `npm run build` →
+  `dist/post-by-post-{chrome,firefox}-<version>.zip`. Store images and
+  listing text: `store/` (`node scripts/store-images.js` remakes images).
+- Website + server: Cloudflare Worker `post-by-post`, **auto-deployed from
+  `main`** (settings in `wrangler.jsonc`; static site in `site/`).
+- Buying: postbypost.app/buy → Paddle checkout → page shows the license key
+  (`txn_…`) and hands it to the extension, which unlocks Pro.
+- Licenses: Paddle sends every sale/refund to
+  `https://postbypost.app/api/paddle-webhook` (notification destination
+  "Post-by-Post licenses", 4 events). The Worker stores them in the D1
+  database `post-by-post-licenses`; `/api/verify` answers from it. Signed with
+  the Cloudflare Secret `PADDLE_WEBHOOK_SECRET`, which **never expires**.
+- The old Paddle API key (Cloudflare Secret `PADDLE_API_KEY`, expires
+  10 Jan 2027) is only a fallback now. **Let it expire; ignore Paddle's
+  expiry emails.** Buyers who already unlocked Pro keep it even on errors.
+- Support tool: https://postbypost.app/check checks a key by hand. Lost
+  keys: Paddle → Transactions.
+
+## Paddle IDs (none secret; secrets never go in the repo or chat)
+| | Sandbox (testing only) | Live |
 |---|---|---|
 | Dashboard | https://sandbox-vendors.paddle.com | https://vendors.paddle.com |
 | Price ID | `pri_01m4awmrgacaa31s1yqqqbrcd0` | `pri_01m4cc8gaek1hq4njx5237rd7n` |
 | Product ID | `pro_01m4ap6z5dz89yhr2ystqssfxr` | `pro_01m4cc42znpx329hqhfpwavpfw` |
 | Client-side token | `test_4509231d6c8e613994ca16ae20f` | `live_19bab355a6d9d79e2d7d5183c76` |
 
-- API keys are **secret** and never go in the repo or in chat. The **live**
-  API key is stored in Cloudflare as the Secret `PADDLE_API_KEY` (Workers &
-  Pages → post-by-post → Settings → Variables and secrets). Since 17 Oct the
-  license check no longer depends on it: Paddle notifications fill the D1
-  database instead. **Let the API key expire; ignore Paddle's expiry emails.**
-  The notification destination's secret key (Cloudflare Secret
-  `PADDLE_WEBHOOK_SECRET`) never expires.
-  Status 17 Oct: code live, D1 database `post-by-post-licenses` created,
-  Paddle notification destination `https://postbypost.app/api/paddle-webhook`
-  (Active, 4 events) added, Cloudflare `PADDLE_WEBHOOK_SECRET` set. To
-  confirm end to end: a $0 purchase with a 100% discount code should unlock
-  Pro and add a row to the `licenses` table. Still to do: update the Firefox
-  listing's privacy text, which says nothing is stored on our servers.
-- `keep_vars: true` in `wrangler.jsonc` stops deploys wiping that variable.
+## Accounts (all under the owner's Gmail)
+- Chrome Web Store dashboard: https://chrome.google.com/webstore/devconsole
+- Firefox developer hub: https://addons.mozilla.org/developers/addons
+  (two-step login with Google Authenticator; backup codes saved by owner)
+- Cloudflare: https://dash.cloudflare.com (Worker, D1, domain, email)
+- Paddle: https://vendors.paddle.com (the owner's password app once filled the
+  sandbox password here and caused a lockout; check the saved entry)
+- GitHub: https://github.com/gordo007/post-by-post
 
-## Status
-- Sandbox purchase tested end to end in Firefox: checkout → key shown →
-  Pro unlocked in the extension. ✅
-- Paddle Live: product and price created ✅, client-side token created ✅,
-  account verification **Complete** ✅, website approval **Approved** ✅,
-  default payment link saved ✅, live API key stored in Cloudflare as a
-  **Secret** `PADDLE_API_KEY` ✅ (set from the owner's phone: desktop browsers
-  couldn't tick Cloudflare's Secret option), `go-live` merged into `main` ✅.
-- PayPal stays enabled at checkout (owner is fine with it: Paddle owns that
-  PayPal account; payouts to the owner are by bank transfer).
+## What we did (12–17 Oct 2026)
+1. Went live with Paddle; real purchase + refund tested.
+2. Made store images and listing text; Chrome Web Store account ($5),
+   trader verification; submitted and **approved in one day** (14 Oct).
+3. Homepage buttons now link to the store and the buy page.
+4. Fixed a bug where store users saw "Developer: unlock Pro" (free Pro);
+   shipped as 0.5.2.
+5. Submitted to Firefox Add-ons (17 Oct). Tried Edge; Microsoft refused.
+6. Replaced the expiring-API-key license check with Paddle notifications +
+   D1, so licensing runs with no upkeep.
 
-## Next steps, in order
-1. (Done: domain approved, payment link saved, go-live merged, live key set.)
-2. (Done 12 Oct: real $3.99 live purchase `txn_01m4pvwyg312tpa8p0z2fmdb3b`
-   went through, then was fully refunded; https://postbypost.app/check now
-   reports it "Not valid", so the live API key and refund check work.)
-3. Optional: disable PayPal under Checkout settings → Payment methods.
-4. Store launch. **Chrome Web Store: LIVE since 14 Oct 2026** (approved in
-   one day), version 0.5.2 submitted 14 Oct (0.5.1 live), item ID `pkgplalclecancaongbdlljdoojgnhim`:
-   https://chromewebstore.google.com/detail/post-by-post-for-reddit/pkgplalclecancaongbdlljdoojgnhim
-   Publisher "Kramerica Industries", trader account, **trader verification
-   complete** (17 Oct). Note: Google shows the payments-profile name, address
-   and phone to EU visitors; change them in the Google payments profile. Dashboard:
-   https://chrome.google.com/webstore/devconsole (works in Firefox 115).
-   Listing text and form answers: `store/listing.md`; images: `store/images/`
-   (`node scripts/store-images.js` remakes them). Homepage buttons now link
-   to the store and to buy.html.
-5. **Firefox Add-ons: 0.5.2 submitted 17 Oct 2026**, listed at
-   https://addons.mozilla.org/firefox/addon/post-by-post/ once approved
-   (add-on ID `post-by-post@postbypost.app`; upload
-   `dist/post-by-post-firefox-<version>.zip`). Developer name Kramerica
-   Industries; the Mozilla account uses two-step login (Google
-   Authenticator). License: All Rights Reserved.
-6. Edge Add-ons: **skipped** (17 Oct). Partner Center enrollment
-   (partner.microsoft.com …/enrollnow/msedgeaddons) failed with "Something
-   went wrong" / "Not Authorized" in Firefox 115. Edge users
-   can install from the Chrome Web Store ("Allow extensions from other
-   stores"). Retry later from a newer browser if wanted.
-   Also pending: an owner 100%-discount Paddle code. Change the homepage button from "Coming soon" to the
-   store link, and link a Buy button.
+## Optional loose ends (none urgent)
+- When Mozilla approves Firefox: add a Firefox button to the homepage, and
+  replace the Firefox listing's privacy sentence "Nothing is stored on our
+  servers" with: "Our server keeps a list of Pro order numbers and whether
+  each was paid or refunded, as reported by Paddle. No personal details."
+- Owner's free Pro: Paddle → Catalog → Discounts → 100% code (usage limit 1),
+  then buy at https://postbypost.app/buy for $0. This also proves the
+  notification → D1 chain end to end (a row appears in the `licenses` table).
+- Optional: disable PayPal in Paddle checkout settings.
+- Cloudflare's PR preview check always shows red ("Build: Failed", 0 s); it's
+  the preview setup, not the code. Production deploys from `main` work.
