@@ -41,6 +41,14 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
   database instead. **Let the API key expire; ignore Paddle's expiry emails.**
   The notification destination's secret key (Cloudflare Secret
   `PADDLE_WEBHOOK_SECRET`) never expires.
+  Status 17 Oct: code live, D1 database `post-by-post-licenses` created by
+  the deploy. **Still to do (owner):** Paddle → Developer tools →
+  Notifications → new webhook destination
+  `https://postbypost.app/api/paddle-webhook` (events transaction.paid,
+  transaction.completed, adjustment.created, adjustment.updated), then put
+  its secret key in Cloudflare as Secret `PADDLE_WEBHOOK_SECRET`. Until then
+  the API key keeps checks working. Also update the Firefox listing's
+  privacy text, which still says nothing is stored on our servers.
 - `keep_vars: true` in `wrangler.jsonc` stops deploys wiping that variable.
 
 ## Status
