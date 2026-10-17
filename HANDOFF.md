@@ -67,7 +67,12 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
    Listing text and form answers: `store/listing.md`; images: `store/images/`
    (`node scripts/store-images.js` remakes them). Homepage buttons now link
    to the store and to buy.html.
-5. Next: Firefox Add-ons (`dist/post-by-post-firefox-<version>.zip`, add-on ID
-   `post-by-post@postbypost.app`; passes `npx web-ext lint`), then
-   Edge Add-ons. Change the homepage button from "Coming soon" to the
+5. **Firefox Add-ons: 0.5.2 submitted 17 Oct 2026**, listed at
+   https://addons.mozilla.org/firefox/addon/post-by-post/ once approved
+   (add-on ID `post-by-post@postbypost.app`; upload
+   `dist/post-by-post-firefox-<version>.zip`). Developer name Kramerica
+   Industries; the Mozilla account uses two-step login (Google
+   Authenticator). License: All Rights Reserved.
+6. Next: Edge Add-ons (reuses the Chrome zip). Also pending, by the owner's
+   choice: Google trader verification, an owner 100%-discount Paddle code. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.
