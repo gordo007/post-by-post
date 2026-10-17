@@ -3,6 +3,8 @@
 Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code works.
 
 ## About the owner
+- **Follow the rules in `CLAUDE.md` before every instruction** (always give
+  links; otherwise guide from big to small; easiest, maintenance-free way).
 - A novice. Wants **numbered, step-by-step instructions with exact links** and
   what to click. Prefers short replies.
 - Windows 8.1, **Chrome 109** and **Firefox 115** (old: some modern dashboards
