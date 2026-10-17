@@ -1,6 +1,6 @@
 # Privacy policy: Post-by-Post for Reddit
 
-_Last updated: 12 October 2026_
+_Last updated: 17 October 2026_
 
 Post-by-Post is a browser extension that changes how Reddit feeds scroll. It is built to need as little as possible.
 
@@ -10,7 +10,7 @@ Post-by-Post is a browser extension that changes how Reddit feeds scroll. It is 
 
 **Where it runs:** on reddit.com pages, where it adjusts scrolling and reads the page only to find where posts begin and end; and on postbypost.app, where it receives your license key after checkout.
 
-**Payments:** if you buy Pro, the purchase is handled by our reseller Paddle.com, the Merchant of Record, under its own privacy policy. We never see your card details. To unlock Pro, your license key (your Paddle order number) is sent to postbypost.app, which asks Paddle whether it is a paid, unrefunded Pro purchase. No personal details are involved and nothing is stored on our servers; the key is kept in your browser and re-checked about weekly so refunds are reflected.
+**Payments:** if you buy Pro, the purchase is handled by our reseller Paddle.com, the Merchant of Record, under its own privacy policy. We never see your card details. To unlock Pro, your license key (your Paddle order number) is sent to postbypost.app, which answers whether it is a paid, unrefunded Pro purchase. For that, our server keeps a list of Pro order numbers and whether each was paid or refunded, as reported by Paddle. No email, name or other personal details are involved; the key is kept in your browser and re-checked about weekly so refunds are reflected.
 
 **Changes:** if this policy changes, the new version will be published here with a new date.
 

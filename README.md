@@ -55,9 +55,14 @@ On the free plan these controls are locked and the defaults apply.
    automatically. On another computer, the buyer pastes the key under
    **Already bought?** in the menu.
 3. Either way the extension asks `POST https://postbypost.app/api/verify`
-   (`worker/index.mjs`), which checks with Paddle that the transaction is
-   paid, includes the Pro price and isn't refunded, and answers
-   `{"pro": true|false}`. Nothing is stored server-side.
+   (`worker/index.mjs`), which answers `{"pro": true|false}`: true when
+   the transaction is paid, includes the Pro price and has no approved
+   refund or chargeback. Paddle reports every sale and refund to
+   `POST /api/paddle-webhook` (signed with `PADDLE_WEBHOOK_SECRET`, which
+   never expires), and the Worker keeps them in the D1 database
+   `post-by-post-licenses`, so no expiring Paddle API key is needed. If
+   `PADDLE_API_KEY` is set and still valid, keys the database hasn't seen
+   are also looked up in Paddle's API.
 4. The extension saves the key in browser storage and re-checks it weekly
    (refunds lock Pro again; being offline doesn't). Lost keys: look up the
    buyer's order under Transactions in Paddle.
@@ -67,8 +72,11 @@ for testing. Store installs never see it.
 
 **Going live:** in `wrangler.jsonc` set `PADDLE_ENV` to `production` and
 `PRO_PRICE_ID` to the live price; in `site/buy.html` set the live
-environment, client-side token and price ID; and set the live
-`PADDLE_API_KEY` secret on the Cloudflare Worker.
+environment, client-side token and price ID; in Paddle add a notification
+destination (`https://postbypost.app/api/paddle-webhook`, events
+`transaction.paid`, `transaction.completed`, `adjustment.created`,
+`adjustment.updated`) and set its secret key as the Worker secret
+`PADDLE_WEBHOOK_SECRET`.
 
 ## Install for testing
 

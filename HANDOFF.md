@@ -19,7 +19,8 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 - Website **https://postbypost.app** (domain at Cloudflare Registrar), served
   by the Cloudflare Worker `post-by-post`, auto-deployed from `main`
   (`npx wrangler deploy`, no build command; settings in `wrangler.jsonc`).
-  `/api/verify` checks license keys with Paddle (`worker/index.mjs`).
+  `/api/verify` checks license keys against a D1 database that Paddle keeps
+  up to date through `/api/paddle-webhook` (`worker/index.mjs`).
   Unlinked page https://postbypost.app/check checks a key by hand (support).
 - Email **support@postbypost.app** forwards to the owner's Gmail
   (Cloudflare Email Routing). Working.
@@ -35,9 +36,11 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 
 - API keys are **secret** and never go in the repo or in chat. The **live**
   API key is stored in Cloudflare as the Secret `PADDLE_API_KEY` (Workers &
-  Pages → post-by-post → Settings → Variables and secrets). Paddle API keys
-  expire: check its expiry date in Paddle → Developer tools → Authentication
-  and replace it before then, or license checks start failing.
+  Pages → post-by-post → Settings → Variables and secrets). Since 17 Oct the
+  license check no longer depends on it: Paddle notifications fill the D1
+  database instead. **Let the API key expire; ignore Paddle's expiry emails.**
+  The notification destination's secret key (Cloudflare Secret
+  `PADDLE_WEBHOOK_SECRET`) never expires.
 - `keep_vars: true` in `wrangler.jsonc` stops deploys wiping that variable.
 
 ## Status
@@ -60,13 +63,23 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 4. Store launch. **Chrome Web Store: LIVE since 14 Oct 2026** (approved in
    one day), version 0.5.2 submitted 14 Oct (0.5.1 live), item ID `pkgplalclecancaongbdlljdoojgnhim`:
    https://chromewebstore.google.com/detail/post-by-post-for-reddit/pkgplalclecancaongbdlljdoojgnhim
-   Publisher "Kramerica Industries", trader account; Google's trader
-   verification is still pending (owner lacks a proof-of-address document;
-   listing shows "non-trader" until verified). Dashboard:
+   Publisher "Kramerica Industries", trader account, **trader verification
+   complete** (17 Oct). Note: Google shows the payments-profile name, address
+   and phone to EU visitors; change them in the Google payments profile. Dashboard:
    https://chrome.google.com/webstore/devconsole (works in Firefox 115).
    Listing text and form answers: `store/listing.md`; images: `store/images/`
    (`node scripts/store-images.js` remakes them). Homepage buttons now link
    to the store and to buy.html.
-5. Next: Firefox Add-ons (`dist/post-by-post-firefox-<version>.zip`), then
-   Edge Add-ons. Change the homepage button from "Coming soon" to the
+5. **Firefox Add-ons: 0.5.2 submitted 17 Oct 2026**, listed at
+   https://addons.mozilla.org/firefox/addon/post-by-post/ once approved
+   (add-on ID `post-by-post@postbypost.app`; upload
+   `dist/post-by-post-firefox-<version>.zip`). Developer name Kramerica
+   Industries; the Mozilla account uses two-step login (Google
+   Authenticator). License: All Rights Reserved.
+6. Edge Add-ons: **skipped** (17 Oct). Partner Center enrollment
+   (partner.microsoft.com …/enrollnow/msedgeaddons) failed with "Something
+   went wrong" / "Not Authorized" in Firefox 115. Edge users
+   can install from the Chrome Web Store ("Allow extensions from other
+   stores"). Retry later from a newer browser if wanted.
+   Also pending: an owner 100%-discount Paddle code. Change the homepage button from "Coming soon" to the
    store link, and link a Buy button.
