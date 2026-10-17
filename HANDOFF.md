@@ -75,7 +75,7 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
    Authenticator). License: All Rights Reserved.
 6. Edge Add-ons: **skipped** (17 Oct). Partner Center enrollment
    (partner.microsoft.com …/enrollnow/msedgeaddons) failed with "Something
-   went wrong" / "Not Authorized" in Firefox 115 and Chrome 109. Edge users
+   went wrong" / "Not Authorized" in Firefox 115. Edge users
    can install from the Chrome Web Store ("Allow extensions from other
    stores"). Retry later from a newer browser if wanted.
    Also pending: an owner 100%-discount Paddle code. Change the homepage button from "Coming soon" to the
