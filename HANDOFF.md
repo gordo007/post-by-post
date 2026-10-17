@@ -19,7 +19,8 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 - Website **https://postbypost.app** (domain at Cloudflare Registrar), served
   by the Cloudflare Worker `post-by-post`, auto-deployed from `main`
   (`npx wrangler deploy`, no build command; settings in `wrangler.jsonc`).
-  `/api/verify` checks license keys with Paddle (`worker/index.mjs`).
+  `/api/verify` checks license keys against a D1 database that Paddle keeps
+  up to date through `/api/paddle-webhook` (`worker/index.mjs`).
   Unlinked page https://postbypost.app/check checks a key by hand (support).
 - Email **support@postbypost.app** forwards to the owner's Gmail
   (Cloudflare Email Routing). Working.
@@ -35,9 +36,11 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
 
 - API keys are **secret** and never go in the repo or in chat. The **live**
   API key is stored in Cloudflare as the Secret `PADDLE_API_KEY` (Workers &
-  Pages → post-by-post → Settings → Variables and secrets). Paddle API keys
-  expire: check its expiry date in Paddle → Developer tools → Authentication
-  and replace it before then, or license checks start failing.
+  Pages → post-by-post → Settings → Variables and secrets). Since 17 Oct the
+  license check no longer depends on it: Paddle notifications fill the D1
+  database instead. **Let the API key expire; ignore Paddle's expiry emails.**
+  The notification destination's secret key (Cloudflare Secret
+  `PADDLE_WEBHOOK_SECRET`) never expires.
 - `keep_vars: true` in `wrangler.jsonc` stops deploys wiping that variable.
 
 ## Status

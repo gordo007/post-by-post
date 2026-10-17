@@ -105,3 +105,143 @@ test('other paths are served from the static site', async () => {
   const res = await worker.fetch(new Request('https://postbypost.app/terms.html'), ENV);
   assert.equal(await res.text(), 'static page');
 });
+
+// --- Paddle notifications + the license database --------------------------------
+
+const crypto = require('node:crypto');
+const { DatabaseSync } = require('node:sqlite');
+const SECRET = 'pdl_ntfset_test_secret';
+
+// A Cloudflare D1 stand-in backed by an in-memory SQLite database.
+function fakeD1() {
+  const sqlite = new DatabaseSync(':memory:');
+  return {
+    prepare(sql) {
+      const stmt = sqlite.prepare(sql);
+      const bound = (args) => ({
+        first: async () => stmt.get(...args) ?? null,
+        run: async () => stmt.run(...args),
+      });
+      return { ...bound([]), bind: (...args) => bound(args) };
+    },
+  };
+}
+
+// The webhook-only setup: no Paddle API key at all.
+const dbEnv = (extra = {}) => ({
+  ...ENV,
+  PADDLE_API_KEY: '',
+  PADDLE_WEBHOOK_SECRET: SECRET,
+  DB: fakeD1(),
+  LICENSE_WAIT_MS: 0,
+  ...extra,
+});
+
+function notify(env, event, { secret = SECRET, ts = Math.floor(Date.now() / 1000), signature } = {}) {
+  const body = JSON.stringify(event);
+  const h1 = signature ?? crypto.createHmac('sha256', secret).update(`${ts}:${body}`).digest('hex');
+  return worker.fetch(
+    new Request('https://postbypost.app/api/paddle-webhook', {
+      method: 'POST',
+      headers: { 'Paddle-Signature': `ts=${ts};h1=${h1}` },
+      body,
+    }),
+    env,
+  );
+}
+
+const sale = (price = PRICE, type = 'transaction.completed') => ({
+  event_type: type,
+  data: { id: KEY, status: 'completed', items: [{ price: { id: price } }] },
+});
+const adjustment = (action, status = 'approved') => ({
+  event_type: 'adjustment.updated',
+  data: { id: 'adj_1', action, status, transaction_id: KEY },
+});
+
+test('a Pro sale reported by Paddle unlocks without any API key', async () => {
+  const env = dbEnv();
+  assert.equal((await notify(env, sale())).status, 200);
+  assert.equal(await pro({ key: KEY }, env), true);
+  assert.equal(calls.length, 0, 'Paddle API not called');
+});
+
+test('"transaction.paid" counts as a sale; other products do not unlock', async () => {
+  const env = dbEnv();
+  await notify(env, sale(PRICE, 'transaction.paid'));
+  assert.equal(await pro({ key: KEY }, env), true);
+  const other = dbEnv();
+  await notify(other, sale('pri_other'));
+  assert.equal(await pro({ key: KEY }, other), false);
+});
+
+test('approved refunds and chargebacks lock Pro again; pending ones do not', async () => {
+  const env = dbEnv();
+  await notify(env, sale());
+  await notify(env, adjustment('refund', 'pending_approval'));
+  assert.equal(await pro({ key: KEY }, env), true);
+  await notify(env, adjustment('refund'));
+  assert.equal(await pro({ key: KEY }, env), false);
+
+  const charged = dbEnv();
+  await notify(charged, sale());
+  await notify(charged, adjustment('chargeback'));
+  assert.equal(await pro({ key: KEY }, charged), false);
+  await notify(charged, adjustment('chargeback_reverse'));
+  assert.equal(await pro({ key: KEY }, charged), true);
+});
+
+test('a refund reported before the sale still wins', async () => {
+  const env = dbEnv();
+  await notify(env, adjustment('refund'));
+  await notify(env, sale());
+  assert.equal(await pro({ key: KEY }, env), false);
+});
+
+test('notifications with a bad, missing, or stale signature are rejected', async () => {
+  const env = dbEnv();
+  assert.equal((await notify(env, sale(), { secret: 'wrong' })).status, 401);
+  assert.equal((await notify(env, sale(), { signature: '' })).status, 401);
+  assert.equal((await notify(env, sale(), { ts: Math.floor(Date.now() / 1000) - 3600 })).status, 401);
+  const unsigned = await worker.fetch(
+    new Request('https://postbypost.app/api/paddle-webhook', { method: 'POST', body: JSON.stringify(sale()) }),
+    env,
+  );
+  assert.equal(unsigned.status, 401);
+  assert.equal(await pro({ key: KEY }, env), false, 'nothing was recorded');
+});
+
+test('the notification endpoint needs the database and secret configured', async () => {
+  assert.equal((await notify({ ...dbEnv(), DB: undefined }, sale())).status, 503);
+  assert.equal((await notify({ ...dbEnv(), PADDLE_WEBHOOK_SECRET: '' }, sale())).status, 503);
+});
+
+test('an unknown key does not unlock with the database alone', async () => {
+  assert.equal(await pro({ key: KEY }, dbEnv()), false);
+});
+
+test('a key checked right after checkout waits for Paddle\'s notification', async () => {
+  const env = dbEnv({ LICENSE_WAIT_MS: 5000 });
+  const answer = pro({ key: KEY }, env);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  await notify(env, sale());
+  assert.equal(await answer, true);
+});
+
+test('while the API key works, purchases it confirms are remembered', async () => {
+  const env = dbEnv({ PADDLE_API_KEY: 'pdl_test_key' });
+  purchase();
+  assert.equal(await pro({ key: KEY }, env), true);
+  paddle = {}; // Paddle forgets / the key stops working
+  paddle.fail = true;
+  assert.equal(await pro({ key: KEY }, env), true, 'answered from the database');
+});
+
+test('an expired API key does not break checks once the database is set up', async () => {
+  const env = dbEnv({ PADDLE_API_KEY: 'pdl_expired_key' });
+  paddle.fail = true; // every API call errors, like an expired key
+  await notify(env, sale());
+  assert.equal((await verify({ key: KEY }, env)).status, 200);
+  assert.equal(await pro({ key: KEY }, env), true);
+  assert.equal(await pro({ key: 'txn_01h8xyzabcdefghijklmnozzz' }, env), false, 'unknown keys get "no", not an error');
+});
