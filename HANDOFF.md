@@ -3,6 +3,8 @@
 Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code works.
 
 ## About the owner
+- **Follow the rules in `CLAUDE.md` before every instruction** (always give
+  links; otherwise guide from big to small; easiest, maintenance-free way).
 - A novice. Wants **numbered, step-by-step instructions with exact links** and
   what to click. Prefers short replies.
 - Windows 8.1, **Chrome 109** and **Firefox 115** (old: some modern dashboards
@@ -41,6 +43,12 @@ Last updated: 12 Oct 2026. Read this first, then `README.md` for how the code wo
   database instead. **Let the API key expire; ignore Paddle's expiry emails.**
   The notification destination's secret key (Cloudflare Secret
   `PADDLE_WEBHOOK_SECRET`) never expires.
+  Status 17 Oct: code live, D1 database `post-by-post-licenses` created,
+  Paddle notification destination `https://postbypost.app/api/paddle-webhook`
+  (Active, 4 events) added, Cloudflare `PADDLE_WEBHOOK_SECRET` set. To
+  confirm end to end: a $0 purchase with a 100% discount code should unlock
+  Pro and add a row to the `licenses` table. Still to do: update the Firefox
+  listing's privacy text, which says nothing is stored on our servers.
 - `keep_vars: true` in `wrangler.jsonc` stops deploys wiping that variable.
 
 ## Status
